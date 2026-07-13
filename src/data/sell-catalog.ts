@@ -433,13 +433,14 @@ export async function getSellBrandCatalogPageAsync(
     fetchBrandSellPageFromShopify(category, brand, catalogParams),
   ]);
 
-  // Static seed for this brand (empty when fallback is off).
-  const staticProducts = allowStaticCatalogFallback() ? getSellBrandProducts(category, brand) : [];
+  // What can a customer sell? The seed catalogue of models is always available.
+  const staticProducts = getSellBrandProducts(category, brand);
 
-  // Use Shopify when it actually returned products. If the Shopify collection
-  // exists but is empty (e.g. the catalogue was cleared) and we have static seed
-  // data, fall through to the static list rather than showing an empty page.
-  if (fromShopify && (fromShopify.products.length > 0 || staticProducts.length === 0)) {
+  // Prefer live Shopify products; but if the Shopify collection is empty (e.g. the
+  // catalogue hasn't been synced yet), fall back to the seed list so the sell
+  // page is never blank. This is deliberately independent of the fallback flag —
+  // an empty sell page is never useful, and the seed is what users trade in.
+  if (fromShopify && fromShopify.products.length > 0) {
     const modelLinks =
       category === "mobile" && brand === "samsung"
         ? resolveSamsungModelLinks(fromShopify.modelLinks, fromShopify.showingAll)
@@ -461,7 +462,7 @@ export async function getSellBrandCatalogPageAsync(
     };
   }
 
-  if (!allowStaticCatalogFallback()) {
+  if (!staticProducts.length) {
     return {
       products: [],
       modelLinks: [],
@@ -478,8 +479,7 @@ export async function getSellBrandCatalogPageAsync(
     };
   }
 
-  const allProducts = getSellBrandProducts(category, brand);
-  const paged = paginateStaticProducts(allProducts, catalogParams);
+  const paged = paginateStaticProducts(staticProducts, catalogParams);
   const modelLinks =
     category === "mobile" && brand === "samsung"
       ? resolveSamsungModelLinks(getSellBrandModelLinks(category, brand, paged.products), paged.showingAll)
