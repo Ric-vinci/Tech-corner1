@@ -84,6 +84,19 @@ export async function fetchBrandProductsFromShopify(
   }
 }
 
+/**
+ * Refurb (trade-in) units are buy-side resale inventory, not sell-catalogue
+ * models — they can end up in a brand's Shopify collection when published, so
+ * exclude them from the sell listing (which is about what a customer can trade in).
+ */
+function isRefurbInventoryNode(node: ShopifyProductNode): boolean {
+  return (
+    (node.tags ?? []).some((t) => t.toLowerCase() === "trade-in") ||
+    /-ti-[a-z0-9]{6,}$/i.test(node.handle) ||
+    /\(trade-in refurb\)/i.test(node.title)
+  );
+}
+
 export async function fetchBrandSellPageFromShopify(
   categorySlug: string,
   brandSlug: string,
@@ -96,7 +109,7 @@ export async function fetchBrandSellPageFromShopify(
     const pageResult = await fetchCollectionProductsPage(handle, pagination);
     if (!pageResult) return null;
 
-    const products = pageResult.products.map(shopifyProductToSellDetail);
+    const products = pageResult.products.filter((n) => !isRefurbInventoryNode(n)).map(shopifyProductToSellDetail);
     const { products: _nodes, ...meta } = pageResult;
     return {
       ...meta,
@@ -118,7 +131,7 @@ export async function fetchBrandSellDetailsFromShopify(
   try {
     const handle = brandCollectionHandle(categorySlug, brandSlug);
     const nodes = await fetchAllCollectionProducts(handle);
-    const products = nodes.map(shopifyProductToSellDetail);
+    const products = nodes.filter((n) => !isRefurbInventoryNode(n)).map(shopifyProductToSellDetail);
     return {
       products,
       modelLinks: buildModelFilterLinks(products),
