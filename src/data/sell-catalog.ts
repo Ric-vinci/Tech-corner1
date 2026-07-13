@@ -433,7 +433,13 @@ export async function getSellBrandCatalogPageAsync(
     fetchBrandSellPageFromShopify(category, brand, catalogParams),
   ]);
 
-  if (fromShopify) {
+  // Static seed for this brand (empty when fallback is off).
+  const staticProducts = allowStaticCatalogFallback() ? getSellBrandProducts(category, brand) : [];
+
+  // Use Shopify when it actually returned products. If the Shopify collection
+  // exists but is empty (e.g. the catalogue was cleared) and we have static seed
+  // data, fall through to the static list rather than showing an empty page.
+  if (fromShopify && (fromShopify.products.length > 0 || staticProducts.length === 0)) {
     const modelLinks =
       category === "mobile" && brand === "samsung"
         ? resolveSamsungModelLinks(fromShopify.modelLinks, fromShopify.showingAll)
