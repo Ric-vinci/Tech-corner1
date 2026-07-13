@@ -401,18 +401,20 @@ export async function getSellBrandFamilyPageAsync(
   const fromShopify = await fetchBrandSellDetailsFromShopify(category, brand);
   if (fromShopify?.products.length) {
     const products = fromShopify.products.filter((product) => productMatchesFamily(product, familySlug));
-    if (!products.length) return null;
-
-    return {
-      familyLabel: family.label,
-      familyHref: family.href,
-      products,
-      modelLinks,
-      totalCount: products.length,
-    };
+    if (products.length) {
+      return {
+        familyLabel: family.label,
+        familyHref: family.href,
+        products,
+        modelLinks,
+        totalCount: products.length,
+      };
+    }
+    // Shopify has products but none for this family — fall through to the seed.
   }
 
-  if (!allowStaticCatalogFallback()) return null;
+  // Shopify empty or no match → static seed. Always fall back (independent of the
+  // fallback flag) so a real model's storage-variant page is never a blank 404.
   return getSellBrandFamilyPage(category, brand, familySlug);
 }
 
