@@ -89,10 +89,14 @@ export async function createShopifyInventoryFromTradeIn(
     .replace(/^-|-$/g, "");
   const handle = `${baseHandle}-ti-${submission.id.slice(0, 8)}`;
   const title = `${submission.product_name} (Trade-in Refurb)`;
-  // Resale price defaults to cost + markup so units never list at zero margin.
-  // Staff adjust it per unit on the Refurb stock screen.
-  const cost = Number(submission.revised_price ?? submission.quoted_price ?? 0);
-  const price = String(refurbDefaultResalePrice(cost));
+  const quantity = Math.max(1, Math.floor(Number(submission.quantity) || 1));
+  // Resale price is anchored to the BASE device value (excludes the store-credit
+  // bonus). Prefer the stored base; fall back to the per-unit payout for old rows.
+  const payoutDetails = (submission.payout_details ?? {}) as { base_unit_price?: number };
+  const baseUnit = Number(
+    payoutDetails.base_unit_price ?? Number(submission.quoted_price ?? 0) / quantity,
+  );
+  const price = String(refurbDefaultResalePrice(baseUnit));
   const { imageUrl, categoryTags } = await sourceProductMeta(submission.product_slug);
 
   const data = await adminRequest<{
@@ -110,19 +114,12 @@ export async function createShopifyInventoryFromTradeIn(
       // category:*/brand:* from the source model, plus tags derived from the
       // submission so the unit is always filterable + visible on the storefront.
       tags: refurbTags(submission, categoryTags),
-      // Carry the device photo across so refurb stock isn't imageless.
-      ...(imageUrl
-        ? {
-            metafields: [
-              {
-                namespace: CATALOG_NAMESPACE,
-                key: METAFIELD_KEYS.imageUrl,
-                type: "url",
-                value: imageUrl,
-              },
-            ],
-          }
-        : {}),
+      // Stock quantity (how many identical devices this trade-in covers) + the
+      // device photo so refurb stock isn't imageless.
+      metafields: [
+        { namespace: "inventory", key: "quantity", type: "number_integer", value: String(quantity) },
+        ...(imageUrl ? [{ namespace: CATALOG_NAMESPACE, key: METAFIELD_KEYS.imageUrl, type: "url", value: imageUrl }] : []),
+      ],
       variants: [
         {
           price,

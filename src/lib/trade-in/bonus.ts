@@ -15,9 +15,16 @@ export const STORE_CREDIT_METHOD = "Store Credit";
  * the server never trusts a client-supplied amount — it recomputes the total from
  * this same value, so a tampered request cannot inflate a payout.
  */
+/** The store-credit bonus CAP (£15 by default) — the flat ceiling for the bonus. */
 export function storeCreditBonus(): number {
   const raw = Number(process.env.NEXT_PUBLIC_TRADE_IN_STORE_CREDIT_BONUS ?? 15);
-  return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  return Number.isFinite(raw) && raw > 0 ? raw : 15;
+}
+
+/** Bonus percentage of the base price (20% by default). */
+function storeCreditBonusPct(): number {
+  const raw = Number(process.env.NEXT_PUBLIC_TRADE_IN_STORE_CREDIT_BONUS_PCT ?? 20);
+  return Number.isFinite(raw) && raw >= 0 ? raw / 100 : 0.2;
 }
 
 export function isStoreCredit(paymentMethod: string): boolean {
@@ -25,14 +32,19 @@ export function isStoreCredit(paymentMethod: string): boolean {
   return value.includes("credit") || value.includes("gift") || value.includes("voucher");
 }
 
-/** Bonus applies once per submission (one device), not per unit. */
-export function bonusFor(paymentMethod: string): number {
-  return isStoreCredit(paymentMethod) ? storeCreditBonus() : 0;
+/**
+ * Store-credit bonus PER PHONE: the LOWER of a % of the base price or the flat
+ * cap (e.g. £20 → min(20%×20=£4, £15) = £4). Zero for non-store-credit payouts.
+ */
+export function bonusFor(paymentMethod: string, basePrice: number): number {
+  if (!isStoreCredit(paymentMethod)) return 0;
+  const value = Math.min(Math.max(0, basePrice) * storeCreditBonusPct(), storeCreditBonus());
+  return Math.round(value * 100) / 100;
 }
 
-/** The amount actually owed for a line: unit price × qty, plus any bonus. */
+/** Amount owed for a line: (unit price + per-phone bonus) × quantity. */
 export function quotedTotal(unitPrice: number, quantity: number, paymentMethod: string): number {
-  return unitPrice * quantity + bonusFor(paymentMethod);
+  return (unitPrice + bonusFor(paymentMethod, unitPrice)) * quantity;
 }
 
 /**

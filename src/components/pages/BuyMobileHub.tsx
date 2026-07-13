@@ -7,6 +7,7 @@ import ReadMoreDescription from "@/components/catalog/ReadMoreDescription";
 import { fetchBuyCollectionFromShopify } from "@/lib/shopify/collections";
 import { buyCollections } from "@/data/buy-catalog";
 import { allowStaticCatalogFallback } from "@/lib/shopify/config";
+import { cleanModelName, seedImageForTitle } from "@/lib/buy/catalog";
 import type { BrandItem } from "@/data/types";
 
 /** Brand tiles on the Refurbished Phones landing hub (mirrors the reference DOM). */
@@ -30,7 +31,12 @@ export default async function BuyMobileHub() {
     (await fetchBuyCollectionFromShopify(["mobile-phones"])) ??
     (allowStaticCatalogFallback() ? buyCollections["mobile-phones"] : undefined);
 
-  const topSelling = (collection?.products ?? []).slice(0, 12);
+  // Refurb units land in the general collection with the "(Trade-in Refurb)"
+  // suffix and no image — clean the model name and resolve the seed device photo.
+  const topSelling = (collection?.products ?? []).slice(0, 12).map((p) => {
+    if (!/\(trade-in refurb\)/i.test(p.name)) return p;
+    return { ...p, name: cleanModelName(p.name), image: seedImageForTitle(p.name) ?? p.image };
+  });
 
   return (
     <StoreShell store="buy">

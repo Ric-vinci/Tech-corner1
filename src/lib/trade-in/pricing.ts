@@ -65,12 +65,12 @@ export async function quoteForItem(item: QuoteInput): Promise<Quote> {
   }
 
   const quantity = Math.max(1, Math.floor(Number(item.quantity) || 1));
-  const bonus = bonusFor(item.paymentMethod);
+  const bonus = bonusFor(item.paymentMethod, verifiedUnitPrice); // per phone
 
   return {
     unitPrice: verifiedUnitPrice,
     bonus,
-    total: verifiedUnitPrice * quantity + bonus,
+    total: (verifiedUnitPrice + bonus) * quantity, // bonus applies to every phone
     unverified,
   };
 }

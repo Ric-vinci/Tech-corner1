@@ -83,7 +83,9 @@ export async function POST(request: Request) {
         customer_name: customerName,
         customer_phone: shippingAddress.telephone,
         shipping_address: shippingAddress,
-        payout_details: item.payoutDetails,
+        // Keep the base per-unit price (excludes the store-credit bonus) so the
+        // resale price is anchored to the device value, not the inflated payout.
+        payout_details: { ...(item.payoutDetails ?? {}), base_unit_price: quote.unitPrice },
         status: "submitted",
       };
 

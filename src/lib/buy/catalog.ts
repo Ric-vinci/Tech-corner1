@@ -136,6 +136,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
           handle: string;
           featuredImage: { url: string } | null;
           imageUrl: { value: string } | null;
+          qty: { value: string } | null;
           variants: { nodes: { price: string | null }[] };
         }[];
       };
@@ -148,6 +149,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
             handle
             featuredImage { url }
             imageUrl: metafield(namespace: "catalog", key: "image_url") { value }
+            qty: metafield(namespace: "inventory", key: "quantity") { value }
             variants(first: 1) { nodes { price } }
           }
         }
@@ -184,6 +186,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
       const a = attrs.get(n.id);
       const name = cleanModelName(n.title);
       const key = name.toLowerCase();
+      const unitQty = Math.max(1, Math.floor(Number(n.qty?.value ?? 1)) || 1); // stock qty per unit
       const spec = specsFor(name, a); // real inspection value wins, else representative
       const existing = byModel.get(key);
       if (!existing) {
@@ -194,11 +197,11 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
           href: `/buy-used/${n.handle}.html`,
           brand,
           inStock: true,
-          stockCount: 1,
+          stockCount: unitQty,
           ...spec,
         });
       } else {
-        existing.stockCount = (existing.stockCount ?? 1) + 1;
+        existing.stockCount = (existing.stockCount ?? 1) + unitQty;
         if (amount > 0 && (priceValue(existing.price) === 0 || amount < priceValue(existing.price))) {
           existing.price = `£${amount.toFixed(2)}`;
         }

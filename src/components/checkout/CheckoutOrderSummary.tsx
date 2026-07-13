@@ -10,7 +10,7 @@ type Props = {
 const money = (value: number) => `£${value.toFixed(2)}`;
 
 export default function CheckoutOrderSummary({ items }: Props) {
-  const bonusTotal = items.reduce((sum, item) => sum + bonusFor(item.paymentMethod), 0);
+  const bonusTotal = items.reduce((sum, item) => sum + bonusFor(item.paymentMethod, item.unitPrice) * item.quantity, 0);
 
   return (
     <div id="opc-sidebar" className="opc-sidebar">
@@ -21,7 +21,7 @@ export default function CheckoutOrderSummary({ items }: Props) {
       {/* One card per basket item, each with its own note. */}
       <div className="opc-help-cms">
         {items.map((item) => {
-          const bonus = bonusFor(item.paymentMethod);
+          const bonus = bonusFor(item.paymentMethod, item.unitPrice); // per phone
           return (
             <div key={item.id}>
               <p className="opc-help-cms-item">
@@ -33,7 +33,7 @@ export default function CheckoutOrderSummary({ items }: Props) {
               </p>
               {bonus > 0 && (
                 <p className="opc-help-cms-note" style={{ color: "#1EB16D" }}>
-                  Includes a {money(bonus)} store credit bonus.
+                  Includes a {money(bonus)} store credit bonus{item.quantity > 1 ? ` per device (${money(bonus * item.quantity)} total)` : ""}.
                 </p>
               )}
               <p className="opc-help-cms-note">
@@ -47,11 +47,11 @@ export default function CheckoutOrderSummary({ items }: Props) {
         {bonusTotal === 0 && storeCreditBonus() > 0 && (
           <div>
             <p className="opc-help-cms-item">
-              Get an extra <strong>{money(storeCreditBonus())}</strong> per device
+              Get an extra bonus of up to <strong>{money(storeCreditBonus())}</strong> per device
             </p>
             <p className="opc-help-cms-note">
-              Choose Store Credit instead of a bank transfer or PayPal and we&apos;ll add{" "}
-              {money(storeCreditBonus())} to your payout.
+              Choose Store Credit instead of a bank transfer or PayPal and we&apos;ll add a bonus
+              (20% of the price, up to {money(storeCreditBonus())}) to your payout.
             </p>
           </div>
         )}

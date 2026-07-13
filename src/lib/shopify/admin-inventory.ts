@@ -197,14 +197,17 @@ export async function stockCountByModel(): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   if (!isShopifyAdminConfigured()) return counts;
   try {
-    const data = await adminRequest<{ products: { nodes: { title: string }[] } }>(
-      `query { products(first: 250, query: "tag:trade-in AND status:active") { nodes { title } } }`,
+    const data = await adminRequest<{ products: { nodes: { title: string; qty: { value: string } | null }[] } }>(
+      `query { products(first: 250, query: "tag:trade-in AND status:active") {
+        nodes { title qty: metafield(namespace: "inventory", key: "quantity") { value } }
+      } }`,
       undefined,
       { noStore: true },
     );
     for (const n of data.products.nodes) {
       const key = cleanModelName(n.title).toLowerCase();
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+      const qty = Math.max(1, Math.floor(Number(n.qty?.value ?? 1)) || 1);
+      counts.set(key, (counts.get(key) ?? 0) + qty);
     }
   } catch (err) {
     console.error("[inventory] stockCountByModel failed:", err);
