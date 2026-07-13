@@ -102,6 +102,11 @@ export type CatalogProduct = Product & {
    */
   inStock?: boolean;
   /**
+   * Buy storefront only: how many physical units we currently hold for this
+   * model (one listing per model, not per device). 0/undefined = out of stock.
+   */
+  stockCount?: number;
+  /**
    * Available filter attributes for a buy listing. Every listing (in stock or
    * "coming soon") carries these so the sidebar filters narrow the whole
    * catalogue, not just live stock. In-stock units use their real inspection

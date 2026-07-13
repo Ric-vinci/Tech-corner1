@@ -5,21 +5,25 @@ import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-clie
 import { normalizeShippingAddress, validateShippingAddress } from "@/lib/checkout/shipping-address";
 import { createPaypalOrder, isPaypalConfigured } from "@/lib/buy-payment/paypal";
 import { redeemStoreCredit, redeemByCode } from "@/lib/buy-payment/store-credit";
+import { markRefurbUnitsSold } from "@/lib/shopify/admin-inventory";
 import type { BuyCartItem } from "@/lib/cart/buy-cart";
 
 type Method = "bank" | "paypal" | "gift_card";
 
-/** Re-derive each line price from Shopify (the basket is client-side / tamperable). */
-async function serverPrices(variantIds: string[]): Promise<Map<string, number>> {
-  const map = new Map<string, number>();
+/**
+ * Re-derive each line price from Shopify (the basket is client-side / tamperable)
+ * and capture the owning product id so the unit can be marked sold on purchase.
+ */
+async function serverPrices(variantIds: string[]): Promise<Map<string, { price: number; productId: string | null }>> {
+  const map = new Map<string, { price: number; productId: string | null }>();
   if (!variantIds.length || !isShopifyAdminConfigured()) return map;
   try {
-    const data = await adminRequest<{ nodes: ({ id: string; price: string } | null)[] }>(
-      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id price } } }`,
+    const data = await adminRequest<{ nodes: ({ id: string; price: string; product: { id: string } | null } | null)[] }>(
+      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id price product { id } } } }`,
       { ids: variantIds },
       { noStore: true },
     );
-    for (const n of data.nodes) if (n?.id) map.set(n.id, parseFloat(n.price));
+    for (const n of data.nodes) if (n?.id) map.set(n.id, { price: parseFloat(n.price), productId: n.product?.id ?? null });
   } catch {
     /* fall back to client price */
   }
@@ -53,10 +57,16 @@ export async function POST(request: Request) {
   const prices = await serverPrices(items.map((i) => i.variantId).filter(Boolean) as string[]);
   const lines = items.map((i) => {
     const derived = i.variantId ? prices.get(i.variantId) : undefined;
-    const unit = derived ?? i.price;
+    const unit = derived?.price ?? i.price;
     return { ...i, price: unit, lineTotal: unit * i.quantity };
   });
   const total = lines.reduce((s, l) => s + l.lineTotal, 0);
+  // Units to mark sold (archive) once the order is committed — one physical unit
+  // per product, so buying it removes it from stock and, when it's the model's
+  // last unit, the storefront flips to "Notify when in stock".
+  const soldProductIds = items
+    .map((i) => (i.variantId ? prices.get(i.variantId)?.productId : null))
+    .filter((id): id is string => Boolean(id));
   const supabase = getSupabaseAdmin();
 
   const baseRow = {
@@ -85,6 +95,7 @@ export async function POST(request: Request) {
       paid_at: new Date().toISOString(),
     });
     if (error || !data) return schemaError(error);
+    await markRefurbUnitsSold(soldProductIds); // paid in full — remove from stock
     return NextResponse.json({ orderId: data.id, method, paid: true });
   }
 
@@ -92,6 +103,7 @@ export async function POST(request: Request) {
   if (method === "bank") {
     const { data, error } = await insertOrder(supabase, { ...baseRow, status: "awaiting_payment", payment_status: "pending" });
     if (error || !data) return schemaError(error);
+    await markRefurbUnitsSold(soldProductIds); // reserve the unit so it can't be double-sold
     return NextResponse.json({ orderId: data.id, method });
   }
 
@@ -99,6 +111,7 @@ export async function POST(request: Request) {
   if (!isPaypalConfigured()) return NextResponse.json({ error: "PayPal is not configured." }, { status: 400 });
   const { data, error } = await insertOrder(supabase, { ...baseRow, status: "pending_payment", payment_status: "pending" });
   if (error || !data) return schemaError(error);
+  await markRefurbUnitsSold(soldProductIds); // reserve during the approval window
 
   try {
     const origin = new URL(request.url).origin;

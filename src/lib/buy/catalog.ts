@@ -148,22 +148,39 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
       }
     }
 
-    return data.products.nodes.map((n) => {
-      const amount = n.variants.nodes[0]?.price;
+    // Collapse units to ONE listing per model with a stock count (the storefront
+    // lists models, not devices). Multiple units of the same model → one card,
+    // count = how many we hold, price = cheapest, specs = union of each unit's.
+    const byModel = new Map<string, CatalogProduct>();
+    for (const n of data.products.nodes) {
+      const amount = n.variants.nodes[0]?.price ? parseFloat(n.variants.nodes[0].price!) : 0;
       const a = attrs.get(n.id);
       const name = cleanModelName(n.title);
-      return {
-        name,
-        image: n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? "/images/MicrosoftTeams-image_5_.png",
-        price: amount ? `£${parseFloat(amount).toFixed(2)}` : "£—",
-        href: `/buy-used/${n.handle}.html`,
-        brand,
-        inStock: true,
-        // Real inspection value wins; fall back to representative specs so the
-        // unit is still filterable if it hasn't been fully inspected.
-        ...specsFor(name, a),
-      };
-    });
+      const key = name.toLowerCase();
+      const spec = specsFor(name, a); // real inspection value wins, else representative
+      const existing = byModel.get(key);
+      if (!existing) {
+        byModel.set(key, {
+          name,
+          image: n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? "/images/MicrosoftTeams-image_5_.png",
+          price: amount ? `£${amount.toFixed(2)}` : "£—",
+          href: `/buy-used/${n.handle}.html`,
+          brand,
+          inStock: true,
+          stockCount: 1,
+          ...spec,
+        });
+      } else {
+        existing.stockCount = (existing.stockCount ?? 1) + 1;
+        if (amount > 0 && (priceValue(existing.price) === 0 || amount < priceValue(existing.price))) {
+          existing.price = `£${amount.toFixed(2)}`;
+        }
+        existing.colours = [...new Set([...(existing.colours ?? []), ...spec.colours])];
+        existing.grades = [...new Set([...(existing.grades ?? []), ...spec.grades])];
+        existing.storages = [...new Set([...(existing.storages ?? []), ...spec.storages])];
+      }
+    }
+    return [...byModel.values()];
   } catch {
     return [];
   }

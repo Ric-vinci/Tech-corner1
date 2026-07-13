@@ -3,6 +3,7 @@ import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-clie
 import { resolveImageUrl } from "@/lib/shopify/config";
 import { CATALOG_NAMESPACE, METAFIELD_KEYS } from "@/lib/shopify/metafields";
 import { afterCursorForPage, countProducts } from "@/lib/shopify/paginate";
+import { cleanModelName } from "@/lib/buy/catalog";
 
 const PAGE_SIZE = 25;
 
@@ -165,6 +166,51 @@ const STATUS_MUTATION = `
     }
   }
 `;
+
+/**
+ * Mark refurb units as SOLD once a customer buys them: set Shopify status to
+ * ARCHIVED so `status:active` stock queries (storefront + admin counts) stop
+ * returning them. One physical unit = one product, so a sold unit leaves stock
+ * entirely; when a model's last unit sells, the storefront flips to "Notify when
+ * in stock". Best-effort — never throws, so a paid order is never lost if Shopify
+ * is briefly unavailable (staff can archive manually from Refurb stock).
+ */
+export async function markRefurbUnitsSold(productIds: string[]): Promise<void> {
+  if (!productIds.length || !isShopifyAdminConfigured()) return;
+  const unique = [...new Set(productIds.filter(Boolean))];
+  await Promise.all(
+    unique.map(async (id) => {
+      try {
+        await adminRequest(STATUS_MUTATION, { input: { id, status: "ARCHIVED" } }, { noStore: true });
+      } catch (err) {
+        console.error(`[inventory] markRefurbUnitsSold failed for ${id}:`, err);
+      }
+    }),
+  );
+}
+
+/**
+ * Count ACTIVE refurb units grouped by their (cleaned) model name — the buy
+ * storefront and admin both think in models-with-a-quantity, not per device.
+ */
+export async function stockCountByModel(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (!isShopifyAdminConfigured()) return counts;
+  try {
+    const data = await adminRequest<{ products: { nodes: { title: string }[] } }>(
+      `query { products(first: 250, query: "tag:trade-in AND status:active") { nodes { title } } }`,
+      undefined,
+      { noStore: true },
+    );
+    for (const n of data.products.nodes) {
+      const key = cleanModelName(n.title).toLowerCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  } catch (err) {
+    console.error("[inventory] stockCountByModel failed:", err);
+  }
+  return counts;
+}
 
 const PUBLISH_MUTATION = `
   mutation Publish($id: ID!, $input: [PublicationInput!]!) {

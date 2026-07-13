@@ -31,6 +31,16 @@ with static JSON fallback in `src/data/` when `SHOPIFY_USE_STATIC_FALLBACK=true`
   **"Notify when in stock"** (`CatalogProduct.inStock`, `ProductGrid` buy variant). So **publishing a refurb
   unit is the admin control for what's in stock on the storefront** — deliberately not a Pricing toggle, since
   Pricing edits trade-in quote *models* (a different concept from *units* you own).
+- **One listing per model, with a stock count — never per device.** `fetchInStockUnits` collapses all ACTIVE
+  refurb units of the same model into a single buyable card carrying `stockCount` (how many units we hold) and
+  the union of their specs. So 3 units of one model = one card "3 in stock", not 3 cards.
+- **Buying a unit removes it from stock.** `POST /api/checkout/buy` calls `markRefurbUnitsSold` (archives the
+  purchased Shopify products → status ARCHIVED) for every payment method: gift_card/bank on order creation,
+  paypal reserved at creation (approval window). One physical unit = one product, so a sold unit leaves the
+  ACTIVE pool; when a model's **last** unit sells, its card drops out of `fetchInStockUnits` and the storefront
+  shows **"Notify when in stock"**. Best-effort (never fails a persisted order); staff can re-list an archived
+  unit from Refurb stock if a bank/paypal order falls through. `stockCountByModel()` (admin) counts ACTIVE units
+  per model — shown as an "N in stock" badge on each Refurb stock row and each buy storefront card.
 - **Filter sidebar** (`BuyFilterSidebar`) is fully interactive — all controls write URL params (`model`,
   `price_min/max`, and comma-lists `colour`/`grade`/`storage`), reset to page 1, and show removable **Active
   filtering** chips + Clear All. Colour/grade/storage narrow the **whole catalogue regardless of stock**:

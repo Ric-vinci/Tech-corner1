@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import RefurbInventoryTable, { type RefurbRow } from "@/components/admin/RefurbInventoryTable";
 import { getAdminSession } from "@/lib/admin/session";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { listRefurbUnits, countRefurbUnits } from "@/lib/shopify/admin-inventory";
+import { listRefurbUnits, countRefurbUnits, stockCountByModel } from "@/lib/shopify/admin-inventory";
+import { cleanModelName } from "@/lib/buy/catalog";
 import { isAdminCategory } from "@/lib/admin/categories";
 
 export const metadata = { title: "Refurb stock — 4gadgets Admin" };
@@ -19,9 +20,10 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
   const activeCategory = isAdminCategory(category) ? category : undefined;
   const activeStatus = status === "live" || status === "draft" ? status : undefined;
 
-  const [page, counts] = await Promise.all([
+  const [page, counts, modelStock] = await Promise.all([
     listRefurbUnits({ page: Number(pageParam) || 1, category: activeCategory, status: activeStatus, search: q }),
     countRefurbUnits(activeCategory),
+    stockCountByModel(), // active units per model → "N in stock" per row
   ]);
 
   // Join each Shopify unit with the trade-in it came from (grade + what it cost).
@@ -54,6 +56,7 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
       condition: source?.condition ?? null,
       cost: source?.cost ?? null,
       submissionId: source?.submissionId ?? null,
+      modelStock: modelStock.get(cleanModelName(unit.title).toLowerCase()) ?? 0,
     };
   });
 

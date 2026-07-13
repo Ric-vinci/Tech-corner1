@@ -43,6 +43,11 @@ export default function ProductGrid({ products, variant = "buy", gridClassName =
           >
             {product.name}
           </Link>
+          {variant === "buy" && product.inStock && (product.stockCount ?? 0) > 0 && (
+            <span className="mb-2 w-fit rounded-full bg-green-light px-2 py-0.5 text-[11px] font-semibold text-green">
+              {product.stockCount} in stock
+            </span>
+          )}
           {variant === "buy" && !product.inStock ? (
             <div className="mt-auto">
               <div className="mb-2 flex items-end justify-between">

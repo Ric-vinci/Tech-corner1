@@ -38,3 +38,8 @@ yarn-error.log*
 # scratch
 _*.mjs
 _*.png
+
+# local reference material — read-only visual reference, never served at runtime
+# (kept on your machine; excluded from the repo to keep it lean & deploys fast)
+/wapple_html/
+/public/site/
