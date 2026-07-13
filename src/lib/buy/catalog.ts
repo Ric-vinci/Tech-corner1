@@ -311,10 +311,10 @@ export async function getBuyBrandCatalogPage(
   // The buy storefront lists a curated set of resale models ("shop window"),
   // with the models we actually hold in published refurb stock shown FIRST and
   // buyable; everything else shows "Notify when in stock".
-  // The curated "shop window" is seed data — only show it when static fallback
-  // is enabled. With it off (SHOPIFY_USE_STATIC_FALLBACK=false) the storefront
-  // shows ONLY real published Shopify stock, so an empty catalogue shows nothing.
-  let curated = allowStaticCatalogFallback() ? curatedBuyModels(brand) : [];
+  // The curated "shop window" (47 Samsung models) always shows as model listings;
+  // models we hold in live stock render buyable/"in stock", the rest show
+  // "Notify when in stock". Live devices are the ACTIVE refurb units below.
+  let curated = curatedBuyModels(brand);
   if (curated.length === 0) {
     // Brands without a curated list fall back to collapsing the sell catalog.
     const collection =
