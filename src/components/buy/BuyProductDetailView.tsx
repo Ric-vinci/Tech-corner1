@@ -8,26 +8,40 @@ import { addToBuyCart } from "@/lib/cart/buy-cart";
 
 const money = (v: number) => `£${v.toFixed(2)}`;
 
+// A unit whose inspection value is unknown (null) matches ANY selection for that
+// attribute — an un-inspected unit is still a real, buyable device.
+const fieldMatches = (unitValue: string | null | undefined, selected: string | null) => {
+  const u = (unitValue ?? "").toLowerCase();
+  return u === "" || u === (selected ?? "").toLowerCase();
+};
+
 export default function BuyProductDetailView({ detail }: { detail: BuyProductDetail }) {
   const { units, colourOptions, storageOptions, gradeOptions, gradePrices } = detail;
 
   const has = (key: "colour" | "storage" | "grade", value: string) =>
-    units.some((u) => (u[key] ?? "").toLowerCase() === value.toLowerCase());
+    units.some((u) => fieldMatches(u[key], value));
 
   const first = units[0];
+  // Default grade: the unit's own grade, else the grade priced closest to the
+  // unit's real resale price, so the shown grade/price look right.
+  const defaultGrade =
+    first?.grade ??
+    (first
+      ? [...gradeOptions].sort(
+          (a, b) => Math.abs((gradePrices[a] ?? 0) - first.price) - Math.abs((gradePrices[b] ?? 0) - first.price),
+        )[0]
+      : gradeOptions[0]) ??
+    null;
   const [colour, setColour] = useState<string | null>(first?.colour ?? colourOptions[0]?.label ?? null);
   const [storage, setStorage] = useState<string | null>(first?.storage ?? storageOptions[0] ?? null);
-  const [grade, setGrade] = useState<string | null>(first?.grade ?? null);
+  const [grade, setGrade] = useState<string | null>(defaultGrade);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
 
   const selectedUnit = useMemo(
     () =>
       units.find(
-        (u) =>
-          (u.colour ?? "").toLowerCase() === (colour ?? "").toLowerCase() &&
-          (u.storage ?? "").toLowerCase() === (storage ?? "").toLowerCase() &&
-          (u.grade ?? "").toLowerCase() === (grade ?? "").toLowerCase(),
+        (u) => fieldMatches(u.colour, colour) && fieldMatches(u.storage, storage) && fieldMatches(u.grade, grade),
       ),
     [units, colour, storage, grade],
   );
