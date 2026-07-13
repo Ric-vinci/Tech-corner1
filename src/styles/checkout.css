@@ -1,0 +1,637 @@
+/* Fetchify address search helpers */
+.cc_hidden {
+  display: none !important;
+}
+
+div.cp_manual_entry {
+  margin-top: 8px;
+  font-style: italic;
+}
+
+div.cp_manual_entry > span {
+  cursor: pointer;
+}
+
+div.cp_manual_entry > span > svg {
+  width: 0.8em;
+  margin-left: 0.5em;
+  margin-bottom: 0.1em;
+}
+
+.checkout-index-index div.cp_manual_entry {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #334155;
+}
+
+.checkout-index-index div.cp_manual_entry > span > svg {
+  display: inline-block;
+}
+
+/* Checkout page layout */
+.checkout-index-index .columns {
+  padding-top: 2.5rem;
+}
+
+.checkout-container {
+  display: block;
+}
+
+.checkout-index-index .opc-wrapper {
+  box-sizing: border-box;
+  padding-left: 12px;
+  padding-right: 12px;
+  width: 100%;
+}
+
+.checkout-index-index .opc-sidebar {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.checkout-index-index .opc-wrapper .opc {
+  min-width: 0;
+  width: 100%;
+}
+
+.checkout-index-index .opc-wrapper h1 {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 1em 0;
+}
+
+.checkout-index-index .opc-wrapper .opc,
+.checkout-index-index .opc-wrapper .opc > li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  /* Sidebar is a sibling of .opc-wrapper so it aligns with the top of the
+     progress bar, matching wapple_html/sell/check-out/addbasket/step3. */
+  .checkout-container {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .checkout-index-index .opc-wrapper {
+    width: 66.666667%;
+  }
+
+  .checkout-index-index .opc-sidebar {
+    width: 33.333333%;
+    padding-left: 12px;
+    padding-right: 0;
+  }
+
+  .checkout-index-index .opc-wrapper h1 {
+    font-size: 30px;
+  }
+}
+
+/* Progress bar */
+.opc-progress-bar-wrapper {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.opc-progress-bar-back {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  position: absolute;
+  top: 6px;
+  left: 0;
+  cursor: pointer;
+}
+
+.opc-progress-bar-back svg {
+  display: block;
+}
+
+.opc-progress-bar {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.opc-progress-bar > li {
+  color: #1eb16d;
+  flex-basis: 33.333%;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.opc-progress-bar > li .opc-progress-bar-label {
+  font-size: 16px;
+  font-weight: 700;
+  opacity: 0;
+  padding-bottom: 8px;
+  position: relative;
+  min-height: 28px;
+  line-height: 1.25;
+}
+
+.opc-progress-bar > li .opc-progress-bar-label > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.opc-progress-bar-border {
+  background-color: #a0aaba;
+  border-radius: 4px;
+  height: 2px;
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+
+.opc-progress-bar > li._active .opc-progress-bar-label {
+  opacity: 1;
+}
+
+.opc-progress-bar > li._active .opc-progress-bar-border {
+  background-color: #1eb16d;
+  height: 4px;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Form white card */
+.checkout-payment-method .step-content {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow:
+    0 2px 4px -2px rgba(24, 39, 75, 0.12),
+    0 4px 4px -2px rgba(24, 39, 75, 0.08);
+  margin-bottom: 20px;
+  padding: 30px;
+  position: relative;
+}
+
+
+.checkout-payment-method .step-content .payment-method-content {
+  display: block;
+  margin-top: 0;
+  padding-bottom: 10px;
+  position: relative;
+}
+
+.checkout-payment-method .step-content .payment-method-billing-address {
+  margin: 0;
+}
+
+.checkout-payment-method .step-content .checkout-billing-address {
+  margin: 0 0 20px;
+}
+
+.checkout-payment-method .fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Form fields */
+.opc-wrapper .fieldset {
+  margin-bottom: 0;
+}
+
+.opc-wrapper .field {
+  margin-bottom: 0;
+}
+
+.opc-wrapper .field + .field {
+  margin-top: 20px;
+}
+
+.opc-wrapper .field .label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.fieldset > .field._required > .label::after {
+  content: "*";
+  color: #e02b27;
+  font-size: 1.2rem;
+  margin: 0 0 0 5px;
+}
+
+.opc-wrapper .field .control {
+  position: relative;
+}
+
+.opc-wrapper .cc_search_input {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #d5d7e3;
+  border-radius: 10px;
+  color: #555c67;
+  font-size: 16px;
+  height: auto;
+  padding: 10px 12px;
+}
+
+.opc-wrapper input[type="text"],
+.opc-wrapper input[type="tel"],
+.opc-wrapper select,
+.opc-wrapper .ddg-telephone-input {
+  width: 100%;
+}
+
+.opc-wrapper .ddg-telephone-input,
+.opc-wrapper .iti input[type="text"],
+.opc-wrapper .iti input[type="tel"] {
+  background-color: #fff;
+  border: 1px solid #d5d7e3;
+  border-radius: 10px;
+  color: #555c67;
+  font-size: 16px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-right: 12px;
+}
+
+.opc-wrapper .field .control._with-tooltip .field-tooltip {
+  display: none;
+}
+
+/* Valid field state */
+.opc-wrapper input[type="text"].valid,
+.billing-address-form input[type="text"].valid,
+.opc-wrapper input[type="tel"].valid,
+.billing-address-form input[type="tel"].valid {
+  border-color: #1eb16d;
+  background-image: url("./images/icons/green/check.svg");
+  background-position: right 16px center;
+  background-repeat: no-repeat;
+  background-size: 16px 11px;
+  padding-right: 42px;
+}
+
+.opc-wrapper select.valid,
+.billing-address-form select.valid {
+  border-color: #1eb16d;
+}
+
+/* Reset the vendor .actions-toolbar (display:flex + 1px divider + padding-top),
+   which otherwise shrinks the buttons to their content width and draws a rule
+   above them. The reference has full-width buttons and no divider. */
+.checkout-payment-method .actions-toolbar {
+  display: block;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.checkout-payment-method .actions-toolbar > .primary {
+  display: block;
+  float: none;
+  width: 100%;
+}
+
+/* Shared button metrics (reference: 50px tall, 14px/700, radius 10px) */
+.checkout-payment-method .actions-toolbar > .primary .action.action-update,
+.checkout-payment-method .actions-toolbar > .primary .action.primary.checkout {
+  display: block;
+  float: none;
+  width: 100%;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  border: none;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* Confirm Address — inside white card */
+.checkout-payment-method .step-content .checkout-billing-address .actions-toolbar {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.checkout-payment-method .actions-toolbar > .primary .action.action-update {
+  background-color: #1eb16d;
+  color: #fff;
+}
+
+.checkout-payment-method .actions-toolbar > .primary .action.action-update:hover {
+  background-color: #18a05f;
+}
+
+/* Cancel — plain blue link under Confirm Address */
+.checkout-payment-method .actions-toolbar > .primary .action.action-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #006bb4;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  cursor: pointer;
+}
+
+.checkout-payment-method .actions-toolbar > .primary .action.action-cancel:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+
+/* Trade In — address step (outside white card) */
+.checkout-payment-method > .actions-toolbar {
+  margin-top: 0;
+  margin-bottom: 40px;
+}
+
+.checkout-payment-method > .actions-toolbar .action.primary.checkout.btn__trade-in--idle,
+.checkout-payment-method > .actions-toolbar .action.primary.checkout:disabled {
+  background-color: #b8e6d0;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* Confirmed address — inside payment-method-content */
+.billing-address-details {
+  line-height: 27px;
+  color: #333;
+}
+
+.billing-address-details a {
+  color: #006bb4;
+  text-decoration: none;
+}
+
+.billing-address-details a:hover {
+  text-decoration: underline;
+}
+
+.checkout-payment-method .step-content .checkout-billing-address .actions-toolbar {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.checkout-payment-method .step-content .checkout-billing-address .actions-toolbar > .primary {
+  display: block;
+  float: none;
+}
+
+/* Change Address — compact green button (reference: 172x50, 14px/700) */
+.checkout-payment-method .step-content .checkout-billing-address .action-edit-address.primary {
+  display: inline-block;
+  width: auto;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+  padding: 16px 28px;
+  border-radius: 10px;
+  border: none;
+  background-color: #1eb16d;
+  color: #fff;
+  cursor: pointer;
+}
+
+.checkout-payment-method .step-content .checkout-billing-address .action-edit-address.primary:hover {
+  background-color: #18a05f;
+}
+
+/* Trade In — shared by the address and confirmed steps (both render the
+   agreements + button below the card in normal flow). */
+.checkout-payment-method .actions-toolbar .action.primary.checkout.btn__trade-in--idle,
+.checkout-payment-method .actions-toolbar .action.primary.checkout.btn__trade-in:disabled {
+  background-color: #b8e6d0;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.checkout-payment-method .actions-toolbar .action.primary.checkout.btn__trade-in:not(:disabled):not(.btn__trade-in--idle) {
+  background-color: #1eb16d;
+  color: #fff;
+  cursor: pointer;
+}
+
+.checkout-payment-method .actions-toolbar .action.primary.checkout.btn__trade-in:not(:disabled):not(.btn__trade-in--idle):hover {
+  background-color: #18a05f;
+}
+
+/* Sell-my checkout overrides (reference: checkout(1).css) */
+.sell-my .opc-progress-bar > li {
+  color: #1eb16d;
+}
+
+.sell-my .opc-progress-bar > li._active .opc-progress-bar-border {
+  background-color: #1eb16d;
+}
+
+.sell-my .payment-method .action.primary {
+  background-color: #1eb16d;
+  border-color: #1eb16d;
+}
+
+.sell-my .checkout-agreements-block .checkout-agreement.field {
+  margin: 0;
+}
+
+.your-address-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+@media only screen and (min-width: 768px) {
+  .opc-sidebar {
+    top: 0;
+    position: sticky;
+    align-self: flex-start;
+  }
+}
+
+/* Sidebar help block only (payment step) */
+.checkout-index-index .opc-sidebar .opc-block-summary,
+.checkout-index-index .opc-sidebar .items-in-cart {
+  display: none !important;
+}
+
+.opc-help-cms > div {
+  background-color: #fff;
+  border: 1px solid #d5d7e3;
+  border-radius: 10px;
+  padding: 24px;
+  position: relative;
+  margin-top: 15px;
+}
+
+.opc-help-cms p {
+  margin: 0;
+}
+
+.opc-help-cms .opc-help-cms-item {
+  color: #555c67;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.opc-help-cms .opc-help-cms-item strong {
+  color: #0e1012;
+  font-weight: 700;
+}
+
+.opc-help-cms .opc-help-cms-item + .opc-help-cms-item {
+  margin-top: 12px;
+}
+
+.opc-help-cms .opc-help-cms-note {
+  margin-top: 12px;
+  color: #555c67;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.opc-help-cms p + p.opc-help-cms-note {
+  margin-top: 12px;
+}
+
+/* intl-tel-input */
+/* Reference computes .iti as inline-block/auto, so the phone field keeps its
+   intrinsic width rather than stretching like the other inputs. */
+.iti {
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+
+.iti input,
+.iti input[type="text"],
+.iti input[type="tel"] {
+  position: relative;
+  z-index: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  width: 100%;
+}
+
+.iti__flag-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding: 1px;
+  z-index: 1;
+}
+
+.iti__selected-flag {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px 0 8px;
+}
+
+.iti__arrow {
+  margin-left: 6px;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid #555;
+}
+
+.iti__flag {
+  width: 20px;
+  height: 15px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+/* United Kingdom — the flag sprite the reference uses lives in a Magento
+   module, so the Union Jack is inlined here to keep the app self-contained. */
+.iti__flag.iti__gb {
+  height: 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'><clipPath id='s'><path d='M0,0 v30 h60 v-30 z'/></clipPath><clipPath id='t'><path d='M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z'/></clipPath><g clip-path='url(%23s)'><path d='M0,0 v30 h60 v-30 z' fill='%23012169'/><path d='M0,0 L60,30 M60,0 L0,30' stroke='%23fff' stroke-width='6'/><path d='M0,0 L60,30 M60,0 L0,30' clip-path='url(%23t)' stroke='%23C8102E' stroke-width='4'/><path d='M30,0 v30 M0,15 h60' stroke='%23fff' stroke-width='10'/><path d='M30,0 v30 M0,15 h60' stroke='%23C8102E' stroke-width='6'/></g></svg>");
+}
+
+.iti--allow-dropdown input,
+.iti--allow-dropdown input[type="text"],
+.iti--allow-dropdown input[type="tel"] {
+  padding-left: 52px;
+}
+
+.iti--allow-dropdown .iti__flag-container {
+  right: auto;
+  left: 0;
+}
+
+.message.message-error {
+  color: #e02b27;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+/* Agreements block */
+.checkout-agreements-block {
+  margin-bottom: 10px;
+}
+
+/* Reference rows sit on a ~20px pitch with no extra gap between the
+   subscribe / SMS / agreement groups. */
+.checkout-agreements-block .subscribe.fieldset,
+.checkout-agreements-block .choice.field,
+.checkout-agreements-block .checkout-agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+}
+
+.checkout-agreements-block input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.checkout-agreements-block .label {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkout-agreement.required .label::after {
+  content: "*";
+  color: #e02b27;
+  margin-left: 4px;
+}
+
+
+/* ------------------------------------------------------------------
+   Buy checkout is BLUE (sell is green). Re-tint the hardcoded green
+   (#1eb16d) elements under the buy store wrapper.
+   ------------------------------------------------------------------ */
+.buy-used .btn-primary {
+  background-color: #007afb;
+  border-color: #007afb;
+}
+.buy-used .btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0069d9;
+}
+.buy-used .opc-progress-bar-item._active .opc-progress-bar-label span {
+  color: #007afb;
+}
+.buy-used .opc-progress-bar-item._active .opc-progress-bar-border {
+  background-color: #007afb;
+}

@@ -1,0 +1,219 @@
+Tech Corner Trade‑In System
+
+This document explains the Tech Corner Trade‑In System in a clear, human‑friendly way while preserving all technical and functional details from the original specification. It is intended for developers, store owners, and stakeholders who need a complete understanding of how the system works, how it is structured, and how it is maintained.
+
+────────────────────────────────────────
+SYSTEM OVERVIEW
+
+The Tech Corner Trade‑In System is a full‑stack solution that allows customers to trade in electronic devices such as phones, tablets, laptops, gaming consoles, and smart watches. Customers can receive either store credit or cash payments depending on their chosen payout method.
+
+The system is made up of four main parts:
+• Frontend: Next.js frontend used as the customer facing storefront
+• Backend: Shopify StorefrontAPI +  Next.js Route Handlers
+• Database: Shopify Internal database + Supabase(PostgreSQL)
+• A custom authentication layer using JSON Web Tokens (JWT)
+
+Shopify’s Admin API is used to sync products, variants, customers, and gift cards when needed.
+
+────────────────────────────────────────
+ARCHITECTURE
+
+At a high level, customers interact with the NextJS frontend. The NextJS frontend communicates with the shopify storefront API and NextJS route handlers over HTTPS. The backend handles authentication, business logic, pricing, and persistence, and stores all trade‑in and customer data in Supabase.
+
+Shopify Admin API is used in parallel for:
+• Product and variant lookups
+• Gift card creation
+• Customer linking
+
+Frontend stack:
+• NextJS(App Router Structure)
+• Vanilla JavaScript (ES6+)
+• Tailwind CSS combined with Shadcn/ui
+• Browser LocalStorage for state
+
+Backend stack:
+• NextJS API
+• Shopify storefront API
+• Supabase(PostgreSQL)
+• JWT (jsonwebtoken)
+• bcrypt for password hashing
+• Nodemailer for emails
+• CORS middleware
+
+Deployment:
+• NextJS(App Router) for frontend
+• Vercel serverless functions for backend
+• Supabase(PostgreSQL) for database
+
+
+────────────────────────────────────────
+FRONTEND STRUCTURE
+
+The NextJS storefront is organized using sections and templates.
+
+Key sections include:
+• Trade‑in flow
+• Basket page
+• Checkout
+• Account dashboard
+• Login and profile pages
+• Hot Recommendations (Featured Products) carousel – category tabs, horizontal scroll, product cards with wishlist, “Choose options”, placeholder when no image
+• Homepage categories – hero + tiles layout (collection-list with hero_tiles)
+• Header – sticky behaviour; optional header-clean.css for stable layout (no shift on scroll/refresh)
+
+LocalStorage is used to persist:
+• Basket items
+• Authentication tokens
+• Customer data
+
+Global window variables track selections such as device type, brand, model, condition, and final price.
+
+Hot Recommendations carousel (featured-collection-carousel):
+• Section title and category tabs (All, Phones, Tablets, Laptops, Consoles & Gaming, Accessories, etc.) with left/right arrows
+• Products per category: configurable limit (2–16, default 8); products excluded if tagged “trade-in”
+• Sorting: follows each collection’s sort order as set in Shopify Admin (e.g. Featured, Best selling, Manual)
+• No automatic rotation of products; same set of products per category on each load until collections or sort change
+• Product cards: image or configurable placeholder (e.g. product-apparel-2, image icon) when no featured image; title (2-line clamp for equal card height); price; “Choose options” button; wishlist heart. Card styling: no shadow/border, uniform white background, tight spacing (image–title, price–button)
+
+────────────────────────────────────────
+AUTHENTICATION SYSTEM
+
+Customers authenticate using a custom JWT‑based system.
+
+Flow:
+1. User registers or logs in
+2. Passwords are hashed with bcrypt
+3. Backend issues a signed JWT
+4. Token is stored in LocalStorage
+5. Token is sent in Authorization headers for protected routes
+
+JWT payload includes customer ID, email, issued time, and expiration time.
+
+Password reset uses time‑limited tokens stored in MongoDB and delivered via email.
+
+────────────────────────────────────────
+TRADE‑IN FLOW
+
+Customer journey:
+1. Select device category
+2. Choose brand and model
+3. Select storage, color, and condition
+4. Confirm device checks (unlocked, account removed)
+5. View calculated price
+6. Add item to basket or email quote
+7. Review basket
+8. Checkout and select payment method
+9. Submission is stored and confirmed by email
+
+Two pricing methods are supported:
+• Direct condition‑based pricing from database
+• Multiplier‑based pricing using base price × condition multiplier
+
+Store credit bonus: a fixed amount (e.g. £15) is added when the customer chooses store credit; configurable globally and per product in Pricing Admin. “Set all to £15” bulk action available. Bonus is shown only on the checkout page, not on the product detail page.
+
+On the product detail page, the price is shown only when a condition is selected; otherwise the displayed price is £0.00 and finalPrice is 0.
+
+────────────────────────────────────────
+BASKET SYSTEM
+
+Basket items are stored in LocalStorage and persist across pages.
+
+Core features:
+• Add items
+• Update quantities
+• Remove items
+• Validate basket before checkout
+
+Batch trade‑ins are handled as a single submission with multiple items.
+
+────────────────────────────────────────
+CUSTOMER ACCOUNT SYSTEM
+
+The account area allows customers to:
+• View dashboard statistics
+• Track trade‑in status
+• View detailed submissions
+• Edit profile information
+• Change passwords
+
+Accounts are stored in MongoDB and optionally linked to Shopify customers. Registration can create or find a Shopify customer (createOrFindShopifyCustomer). Profile updates sync to Shopify when shopifyCustomerId is present.
+
+────────────────────────────────────────
+ADMIN PANELS & STAFF
+
+Staff Admin (e.g. /pages/cp-staff): Staff list, add/edit/delete staff, roles, permissions (backupView, backupRestore, tradeInCredit, etc.). Tabs: Staff, Audit Logs, Backup System (create backup, list, restore, delete, config). Access: shared password then staff email + 6‑digit verification code. Mobile: dropdown for tab navigation.
+
+Trade‑In Admin (e.g. /pages/cp-trade-ins): List submissions; filters; view detail modal; update status (accept/reject); Issue Gift Card (store credit); Issue Bank Transfer / Issue PayPal (with optional “message to customer” e.g. date/time paid). Payment email includes payment date (UK format) and optional message. Export CSV. Mobile: dropdown for tab navigation.
+
+Pricing Admin (e.g. /pages/cp-purchases): Products from trade_in_products (edit prices, store credit bonus, colors, image URL, sort order); bulk “Set all to £15”; bulk edit grid with device-aware storage/size options (GB for phones/tablets/laptops, mm for watches). Pagination (e.g. 50/100/150 per page). Email templates and shipping instructions are managed on the dedicated Settings page; this page shows a short note directing users there. Mobile: dropdown for tab navigation.
+
+Settings Admin (e.g. /pages/cp-settings): Dedicated page for Email templates (subject, HTML, plain for “email me price”) and Shipping instructions (with {{submissionId}}). Save, Preview, and Reset for each. Same navigation style and mobile dropdown as other admin pages.
+
+Quotes Admin (e.g. /pages/cp-quotes): Manage price quotes (“email me price”). Mobile: dropdown for tab navigation.
+
+Dashboard (e.g. /pages/cp-dashboard): Overview stats (trade‑ins, gift cards issued). Mobile: dropdown for tab navigation.
+
+Backup restore: Staff Admin → Backup System → choose backup → Restore → select collections (trade_in_products, submissions, staff_members, audit_logs) → confirm. Restore replaces current data in those collections (MongoDB only; Shopify data in backup is not pushed back to the store). See docs/BACKUP_TUTORIAL.md for the full backup/restore guide.
+
+────────────────────────────────────────
+SHIPPING INSTRUCTIONS & EMAILS
+
+Shipping instructions are configurable in Settings Admin (/pages/cp-settings). They are shown on the customer’s trade‑in detail page (“Where to post your device”) and included in the confirmation email after checkout. The placeholder {{submissionId}} is replaced with the submission ID. Fetched by the frontend from GET /api/settings/public (no auth).
+
+Email templates (for “email me price”) are also configured in Settings Admin. Confirmation email and “email me price” use templates stored in settings; “email me price” does not lock the price (customer sees current price when they use the link). Gift card and bank/PayPal payment emails are sent when staff issue credit or cash payment; payment email includes payment date and optional staff message.
+
+────────────────────────────────────────
+DEPLOYMENT
+
+Backend:
+• Deployed on Vercel using serverless functions
+• Environment variables configured in Vercel dashboard
+
+Frontend:
+• Deployed as a NextJS Frontend(App Router)
+• Managed via Shopify Admin or CLI
+
+Database:
+• Supabase(PostgreSQL) with automatic backups
+
+────────────────────────────────────────
+ENVIRONMENT VARIABLES
+
+Backend:
+• SHOPIFY_SHOP
+• SHOPIFY_ACCESS_TOKEN
+• API_SECRET
+• JWT_SECRET
+
+Optional email settings supported via SMTP.
+
+Frontend:
+• TRADE_IN_SERVER_URL defined in theme.liquid
+
+────────────────────────────────────────
+SECURITY CONSIDERATIONS
+
+• Passwords are hashed
+• JWT tokens are signed and expire
+• Admin APIs require API keys
+• Input validation is enforced
+• CORS configured for Shopify usage
+
+────────────────────────────────────────
+TROUBLESHOOTING
+
+Common issues include:
+• MongoDB connection failures
+• Expired JWT tokens
+• Missing LocalStorage data
+• API connectivity issues
+
+Logs are available via:
+• Vercel dashboard
+• Browser console
+• MongoDB Atlas monitoring
+
+────────────────────────────────────────
+VERSION HISTORY
+
+v1.0.0 – Initial release: 29 june 2026

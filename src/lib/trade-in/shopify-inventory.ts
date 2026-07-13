@@ -1,0 +1,117 @@
+import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-client";
+import { CATALOG_NAMESPACE, METAFIELD_KEYS } from "@/lib/shopify/metafields";
+import { resolveImageUrl } from "@/lib/shopify/config";
+import { refurbDefaultResalePrice } from "@/lib/trade-in/bonus";
+import type { TradeInSubmission } from "@/lib/trade-in/types";
+
+/** The source model's photo (resolved to a public URL) — the default inspection photo. */
+export async function getModelImageUrl(slug: string | null): Promise<string | null> {
+  const { imageUrl } = await sourceProductMeta(slug);
+  return imageUrl ? resolveImageUrl(imageUrl) : null;
+}
+
+/**
+ * Pull the source model's photo and its category/brand tags so the refurb unit
+ * shows the device image and can be filtered by category on the admin. Best-effort.
+ */
+async function sourceProductMeta(
+  slug: string | null,
+): Promise<{ imageUrl: string | null; categoryTags: string[] }> {
+  if (!slug) return { imageUrl: null, categoryTags: [] };
+  const handle = slug.replace(/\.html$/, "");
+  try {
+    const data = await adminRequest<{
+      productByHandle: { tags: string[]; imageUrl: { value: string } | null } | null;
+    }>(
+      `query($handle: String!) {
+        productByHandle(handle: $handle) {
+          tags
+          imageUrl: metafield(namespace: "${CATALOG_NAMESPACE}", key: "${METAFIELD_KEYS.imageUrl}") { value }
+        }
+      }`,
+      { handle },
+      { noStore: true },
+    );
+    const product = data.productByHandle;
+    return {
+      imageUrl: product?.imageUrl?.value ?? null,
+      categoryTags: (product?.tags ?? []).filter((t) => t.startsWith("category:") || t.startsWith("brand:")),
+    };
+  } catch {
+    return { imageUrl: null, categoryTags: [] };
+  }
+}
+
+const PRODUCT_SET_MUTATION = `
+  mutation CreateRefurbProduct($input: ProductSetInput!, $identifier: ProductSetIdentifiers) {
+    productSet(synchronous: true, input: $input, identifier: $identifier) {
+      product { id handle }
+      userErrors { field message }
+    }
+  }
+`;
+
+export async function createShopifyInventoryFromTradeIn(
+  submission: TradeInSubmission,
+): Promise<string | null> {
+  if (!isShopifyAdminConfigured()) return null;
+  if (submission.shopify_inventory_product_id) return submission.shopify_inventory_product_id;
+
+  const baseHandle = (submission.product_slug ?? submission.product_name)
+    .replace(/\.html$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const handle = `${baseHandle}-ti-${submission.id.slice(0, 8)}`;
+  const title = `${submission.product_name} (Trade-in Refurb)`;
+  // Resale price defaults to cost + markup so units never list at zero margin.
+  // Staff adjust it per unit on the Refurb stock screen.
+  const cost = Number(submission.revised_price ?? submission.quoted_price ?? 0);
+  const price = String(refurbDefaultResalePrice(cost));
+  const { imageUrl, categoryTags } = await sourceProductMeta(submission.product_slug);
+
+  const data = await adminRequest<{
+    productSet: {
+      product: { id: string; handle: string } | null;
+      userErrors: { field: string[]; message: string }[];
+    };
+  }>(PRODUCT_SET_MUTATION, {
+    identifier: { handle },
+    input: {
+      title,
+      handle,
+      status: "DRAFT",
+      productType: "Refurbished Mobile",
+      // category:*/brand:* carried over so refurb stock is filterable by category.
+      tags: ["trade-in", "refurbished", ...categoryTags],
+      // Carry the device photo across so refurb stock isn't imageless.
+      ...(imageUrl
+        ? {
+            metafields: [
+              {
+                namespace: CATALOG_NAMESPACE,
+                key: METAFIELD_KEYS.imageUrl,
+                type: "url",
+                value: imageUrl,
+              },
+            ],
+          }
+        : {}),
+      variants: [
+        {
+          price,
+          sku: `TI-${submission.id.slice(0, 8).toUpperCase()}`,
+          optionValues: [{ optionName: "Title", name: "Default Title" }],
+        },
+      ],
+      productOptions: [{ name: "Title", values: [{ name: "Default Title" }] }],
+    },
+  });
+
+  const errors = data.productSet.userErrors ?? [];
+  if (errors.length) {
+    throw new Error(`Shopify productSet failed: ${JSON.stringify(errors)}`);
+  }
+
+  return data.productSet.product?.id ?? null;
+}

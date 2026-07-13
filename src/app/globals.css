@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The original 4gadgets compiled stylesheet (src/styles/vendor/styles.css) is
+ * imported AFTER this file in layout.tsx, so its design tokens, fonts, and
+ * component classes (.navigation, .btn, .mode-switch, etc.) take precedence.
+ * Keep this file minimal to avoid fighting the vendor CSS.
+ */
+
+@layer components {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/*
+ * The original storefront opened the level-2 mega-menu flyout with Alpine.js.
+ * Since we render static markup, reveal it on hover with pure CSS instead.
+ */
+@media (min-width: 768px) {
+  .navigation__inner-item--level1:hover > .navigation__submenu-wrapper--level2 {
+    display: block;
+  }
+}
+
+/*
+ * Catalog page layout. Dedicated class names (which the vendor stylesheet does
+ * not define) so the sidebar/products layout is not affected by the two
+ * overlapping Tailwind builds fighting over base utility classes.
+ */
+.catalog-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.catalog-sidebar {
+  width: 100%;
+  flex-shrink: 0;
+}
+.catalog-main {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+.catalog-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .catalog-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .catalog-sidebar {
+    width: 14rem;
+  }
+  .catalog-products {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .catalog-products {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Sell product detail — sticky footer spacing on mobile */
+.catalog-product-view .column.main {
+  padding-bottom: 5rem;
+}
+@media (min-width: 768px) {
+  .catalog-product-view .column.main {
+    padding-bottom: 0;
+  }
+}
+
+/* Toolbar sort dropdown (replaces Alpine.js toggle on static pages) */
+.custom-select.active .custom-select__options,
+.custom-select__options.active {
+  display: block;
+}
