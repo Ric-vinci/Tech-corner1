@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CheckoutAgreementsState } from "@/components/checkout/CheckoutAgreements";
 import { requiredAgreementsChecked } from "@/components/checkout/CheckoutAgreements";
 import CheckoutConfirmedAddress from "@/components/checkout/CheckoutConfirmedAddress";
@@ -40,10 +40,13 @@ export default function CheckoutSecurelyPage() {
   const [agreements, setAgreements] = useState<CheckoutAgreementsState>(defaultAgreements);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set once we start placing the order, so clearing the cart (count → 0) does
+  // not bounce us to the empty basket page before the success page loads.
+  const placingOrder = useRef(false);
 
   useEffect(() => {
     if (!count) {
-      router.replace("/sell-my/checkout/cart");
+      if (!placingOrder.current) router.replace("/sell-my/checkout/cart");
       return;
     }
 
@@ -87,6 +90,7 @@ export default function CheckoutSecurelyPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Checkout failed");
 
+      placingOrder.current = true; // suppress the empty-cart redirect during nav
       clearCart();
       const ids = (data.submissionIds as string[]).join(",");
       // Keep the overlay up through navigation — don't reset `submitting` on

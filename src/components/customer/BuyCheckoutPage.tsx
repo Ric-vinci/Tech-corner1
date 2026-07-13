@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CheckoutShippingForm from "@/components/checkout/CheckoutShippingForm";
 import CheckoutProgressBar from "@/components/checkout/CheckoutProgressBar";
 import CheckoutProcessingOverlay from "@/components/checkout/CheckoutProcessingOverlay";
@@ -30,11 +30,14 @@ export default function BuyCheckoutPage() {
   const [storeCredit, setStoreCredit] = useState<number | null>(null);
   const [giftCardCode, setGiftCardCode] = useState("");
   const [showCode, setShowCode] = useState(false);
+  // Set once the order is placed, so clearing the cart doesn't bounce us to the
+  // empty basket page before the success page loads.
+  const placingOrder = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
     if (!count) {
-      router.replace("/buy-used/checkout/cart");
+      if (!placingOrder.current) router.replace("/buy-used/checkout/cart");
       return;
     }
     fetch("/api/customer/me")
@@ -84,6 +87,7 @@ export default function BuyCheckoutPage() {
         window.location.href = data.approveUrl;
         return;
       }
+      placingOrder.current = true; // suppress the empty-cart redirect during nav
       clearCart();
       window.location.href = `/buy-used/checkout/success?ref=${encodeURIComponent(data.orderId)}`;
     } catch (err) {
