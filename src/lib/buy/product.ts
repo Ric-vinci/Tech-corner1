@@ -2,7 +2,7 @@ import "server-only";
 import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-client";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { resolveImageUrl } from "@/lib/shopify/config";
-import { cleanModelName, modelStorageTier } from "@/lib/buy/catalog";
+import { cleanModelName, modelStorageTier, seedImageForTitle } from "@/lib/buy/catalog";
 import { coloursForModel } from "@/data/model-colours";
 import buySamsungData from "@/data/generated/buy-samsung.json";
 
@@ -132,9 +132,13 @@ export async function getBuyProductDetail(handle: string): Promise<BuyProductDet
         price: v?.price ? parseFloat(v.price) : 0,
       };
     });
-    // Prefer a unit's real photo for the hero image.
+    // Prefer a unit's real photo; else the seed catalogue photo for this model.
     const withImg = forModel.find((n) => n.imageUrl?.value || n.featuredImage?.url);
-    if (withImg) image = withImg.imageUrl?.value ? resolveImageUrl(withImg.imageUrl.value) : withImg.featuredImage!.url;
+    if (withImg) {
+      image = withImg.imageUrl?.value ? resolveImageUrl(withImg.imageUrl.value) : withImg.featuredImage!.url;
+    } else if (units.length) {
+      image = seedImageForTitle(modelName) ?? image;
+    }
   } catch {
     /* leave units empty */
   }

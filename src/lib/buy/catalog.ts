@@ -6,6 +6,33 @@ import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-clie
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import type { SellCatalogParams } from "@/lib/sell/catalog-params";
 import buySamsungData from "@/data/generated/buy-samsung.json";
+import samsungMobileData from "@/data/generated/samsung-mobile.json";
+
+/**
+ * A refurb unit created without a source catalogue model has no image, so the
+ * storefront card would show a generic placeholder. Resolve the real device photo
+ * from the seed catalogue by model name so the buy card matches the sell card.
+ */
+const SEED_MODEL_IMAGES: Map<string, string> = (() => {
+  const map = new Map<string, string>();
+  const add = (name: string, image: string) => {
+    if (!name || !image) return;
+    const full = name.toLowerCase();
+    const model = cleanModelName(name).toLowerCase();
+    if (!map.has(full)) map.set(full, image);
+    if (!map.has(model)) map.set(model, image); // model-level (storage stripped)
+  };
+  for (const p of (samsungMobileData as { products?: { name: string; image: string }[] }).products ?? []) add(p.name, p.image);
+  for (const m of buySamsungData as { name: string; image: string }[]) add(m.name, m.image);
+  return map;
+})();
+
+/** Device photo for a refurb unit's title/model, from the seed catalogue (or null). */
+export function seedImageForTitle(title: string): string | null {
+  const clean = title.replace(/\s*\(Trade-in Refurb\)\s*$/i, "").trim();
+  const hit = SEED_MODEL_IMAGES.get(clean.toLowerCase()) ?? SEED_MODEL_IMAGES.get(cleanModelName(clean).toLowerCase());
+  return hit ? resolveImageUrl(hit) : null;
+}
 
 /**
  * The buy storefront lists one clean listing per *model* (e.g. "Samsung Galaxy
@@ -162,7 +189,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
       if (!existing) {
         byModel.set(key, {
           name,
-          image: n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? "/images/MicrosoftTeams-image_5_.png",
+          image: n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? seedImageForTitle(n.title) ?? "/images/MicrosoftTeams-image_5_.png",
           price: amount ? `£${amount.toFixed(2)}` : "£—",
           href: `/buy-used/${n.handle}.html`,
           brand,
