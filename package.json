@@ -17,7 +17,7 @@
   "dependencies": {
     "@shopify/storefront-api-client": "^1.0.10",
     "@supabase/supabase-js": "^2.110.1",
-    "next": "15.1.6",
+    "next": "15.5.20",
     "nodemailer": "^9.0.3",
     "react": "19.0.0",
     "react-dom": "19.0.0"
