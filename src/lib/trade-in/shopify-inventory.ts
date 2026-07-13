@@ -42,6 +42,31 @@ async function sourceProductMeta(
   }
 }
 
+const KNOWN_BRANDS = [
+  "samsung", "apple", "google", "huawei", "oneplus", "sony", "nokia", "motorola",
+  "xiaomi", "oppo", "realme", "honor", "nothing", "lg", "htc", "zte", "blackberry",
+  "cat", "razer", "redmi", "hmd",
+];
+
+/** Best-effort brand from a product name ("Samsung Galaxy A22 5G" → "samsung"). */
+function brandFromName(name: string): string | null {
+  const first = name.trim().split(/\s+/)[0]?.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!first) return null;
+  return KNOWN_BRANDS.includes(first) ? first : first;
+}
+
+/**
+ * The category and brand tags for a refurb unit. Prefer the source model's tags,
+ * but always derive them from the submission (category + product name) so a unit
+ * is still filterable/visible even when the source catalogue model is missing.
+ */
+function refurbTags(submission: TradeInSubmission, sourceTags: string[]): string[] {
+  const category = (submission.category ?? "mobile").trim();
+  const brand = brandFromName(submission.product_name);
+  const derived = [`category:${category}`, ...(brand ? [`brand:${brand}`] : [])];
+  return [...new Set(["trade-in", "refurbished", ...sourceTags, ...derived])];
+}
+
 const PRODUCT_SET_MUTATION = `
   mutation CreateRefurbProduct($input: ProductSetInput!, $identifier: ProductSetIdentifiers) {
     productSet(synchronous: true, input: $input, identifier: $identifier) {
@@ -82,8 +107,9 @@ export async function createShopifyInventoryFromTradeIn(
       handle,
       status: "DRAFT",
       productType: "Refurbished Mobile",
-      // category:*/brand:* carried over so refurb stock is filterable by category.
-      tags: ["trade-in", "refurbished", ...categoryTags],
+      // category:*/brand:* from the source model, plus tags derived from the
+      // submission so the unit is always filterable + visible on the storefront.
+      tags: refurbTags(submission, categoryTags),
       // Carry the device photo across so refurb stock isn't imageless.
       ...(imageUrl
         ? {
