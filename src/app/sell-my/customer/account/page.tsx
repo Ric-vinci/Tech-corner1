@@ -4,6 +4,7 @@ import {
   formatOrderDate,
   formatOrderNumber,
   formatOrderStatus,
+  orderTotal,
 } from "@/components/customer/customer-ui";
 import CustomerAccountLayout from "@/components/customer/CustomerAccountLayout";
 import StoreShell from "@/components/layout/StoreShell";
@@ -137,7 +138,7 @@ export default async function CustomerAccountRoute() {
                     </div>
                     <div className="p-2 basis-full md:basis-auto md:flex-1 min-w-[8rem]">
                       <p className="text-xs text-grey-dark">Order total</p>
-                      <span className="price">{formatGbp(item.quoted_price)}</span>
+                      <span className="price">{formatGbp(orderTotal(item))}</span>
                     </div>
                     <div className="p-2 basis-full md:basis-auto md:flex-1 min-w-[8rem]">
                       <p className="text-xs text-grey-dark">Order date</p>

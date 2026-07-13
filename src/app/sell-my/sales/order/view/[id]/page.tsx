@@ -5,6 +5,7 @@ import {
   formatOrderDate,
   formatOrderNumber,
   formatOrderStatus,
+  orderTotal,
 } from "@/components/customer/customer-ui";
 import CustomerAccountLayout from "@/components/customer/CustomerAccountLayout";
 import StoreShell from "@/components/layout/StoreShell";
@@ -50,7 +51,12 @@ export default async function CustomerOrderViewPage({ params }: Props) {
               </div>
               <div>
                 <p className="text-xs text-grey-dark">Order total</p>
-                <p className="font-medium">{formatGbp(order.quoted_price)}</p>
+                <p className="font-medium">{formatGbp(orderTotal(order))}</p>
+                {order.revised_price != null && order.revised_price !== order.quoted_price && (
+                  <p className="text-xs text-grey-dark">
+                    Revised offer (original quote {formatGbp(order.quoted_price)})
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-xs text-grey-dark">Product</p>

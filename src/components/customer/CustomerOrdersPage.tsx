@@ -4,6 +4,7 @@ import {
   formatOrderDate,
   formatOrderNumber,
   formatOrderStatus,
+  orderTotal,
 } from "@/components/customer/customer-ui";
 import type { TradeInSubmission } from "@/lib/trade-in/types";
 
@@ -76,7 +77,7 @@ export default function CustomerOrdersPage({ submissions }: Props) {
 
                 <div className="p-2 basis-auto flex-1 col-span-2 text-sm md:text-base">
                   <p className="text-xs text-grey-dark">Order total</p>
-                  <span className="price">{formatGbp(item.quoted_price)}</span>
+                  <span className="price">{formatGbp(orderTotal(item))}</span>
                 </div>
 
                 <div className="p-2 basis-auto flex-1 col-span-2 text-sm md:text-base">
