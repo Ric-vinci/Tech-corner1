@@ -9,6 +9,22 @@ export async function GET() {
   return NextResponse.json({ admins: await listAdminUsers() });
 }
 
+/**
+ * The public site origin for the invite link. Prefer NEXT_PUBLIC_SITE_URL (set to
+ * the deployed URL), then the forwarded host (correct behind Vercel's proxy),
+ * then the raw request origin as a last resort.
+ */
+function siteOrigin(request: Request): string {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (envUrl) return envUrl;
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    return `${proto}://${host}`;
+  }
+  return new URL(request.url).origin;
+}
+
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -23,7 +39,7 @@ export async function POST(request: Request) {
   const email = body.email?.trim().toLowerCase();
   if (!email) return NextResponse.json({ error: "Email is required." }, { status: 400 });
 
-  const origin = new URL(request.url).origin;
+  const origin = siteOrigin(request);
   const result = await createAdminInvite(email, session.email, origin);
   if (!result.ok) {
     const isSchema = /admin_users|relation|column/.test(result.error);
