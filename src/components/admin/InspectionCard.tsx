@@ -5,6 +5,11 @@ import { useState } from "react";
 import type { TradeInSubmission } from "@/lib/trade-in/types";
 
 const GRADES = ["Pristine", "Excellent", "Good", "Fair"];
+const COLOURS = [
+  "Black", "White", "Blue", "Grey", "Green", "Purple", "Gold", "Red", "Silver",
+  "Pink", "Navy", "Yellow", "Orange", "Cream", "Mint", "Violet", "Coral", "Lilac",
+  "Bronze", "Graphite",
+];
 
 /** Storage embedded in the product name, e.g. "… - A226B 64GB" → "64GB". */
 function deriveStorage(name: string): string {
@@ -28,7 +33,7 @@ export default function InspectionCard({ submission, modelImage, onUpdated }: Pr
   // Pre-fill sensible defaults; the model image is the default photo.
   const [grade, setGrade] = useState(submission.grade ?? defaultGrade(submission.condition));
   const [battery, setBattery] = useState(submission.battery_health != null ? String(submission.battery_health) : "100");
-  const [colour, setColour] = useState(submission.colour ?? "");
+  const [colour, setColour] = useState(submission.colour ?? "Black");
   const [storage, setStorage] = useState(submission.storage ?? deriveStorage(submission.product_name));
   const [imei, setImei] = useState(submission.imei ?? "");
   const [photos, setPhotos] = useState(
@@ -104,7 +109,9 @@ export default function InspectionCard({ submission, modelImage, onUpdated }: Pr
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-grey-dark">Colour</span>
-            <input value={colour} onChange={(e) => setColour(e.target.value)} placeholder="e.g. Black" className={inputClass} />
+            <select value={colour} onChange={(e) => setColour(e.target.value)} className={inputClass}>
+              {COLOURS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-grey-dark">Storage</span>
