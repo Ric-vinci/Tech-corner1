@@ -5,7 +5,6 @@ import { RefurbUnitRow, type RefurbRow } from "@/components/admin/RefurbInventor
 
 type Props = {
   sizeGroups: [string, RefurbRow[]][];
-  totalUnits: number;
   totalStock: number;
   live: number;
 };
@@ -19,16 +18,18 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-export default function RefurbModelDetail({ sizeGroups, totalUnits, totalStock, live: initialLive }: Props) {
+export default function RefurbModelDetail({ sizeGroups, totalStock, live: initialLive }: Props) {
   const [liveCount, setLiveCount] = useState(initialLive);
-  const onToggled = (nowLive: boolean) => setLiveCount((c) => Math.max(0, c + (nowLive ? 1 : -1)));
+  // Publishing toggles a whole trade-in (batch); adjust by that batch's device count.
+  const onToggled = (nowLive: boolean, deviceCount: number) =>
+    setLiveCount((c) => Math.max(0, c + (nowLive ? deviceCount : -deviceCount)));
 
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Units" value={totalUnits} />
-        <StatCard label="In stock" value={totalStock} />
+        <StatCard label="Devices in stock" value={totalStock} />
         <StatCard label="Live on storefront" value={liveCount} />
+        <StatCard label="Draft (not listed)" value={Math.max(0, totalStock - liveCount)} />
       </div>
 
       {sizeGroups.map(([size, units]) => (
@@ -52,14 +53,14 @@ export default function RefurbModelDetail({ sizeGroups, totalUnits, totalStock, 
               <tbody>
                 {units.flatMap((u) => {
                   const qty = Math.max(1, u.stockQty ?? 1);
-                  // One row per physical phone. Price/publish shown once (first row);
-                  // all phones of a unit share the one price.
+                  // One row per physical device. Price/publish shown once (first row);
+                  // publishing lists all `qty` devices of this trade-in at once.
                   return Array.from({ length: qty }, (_, i) => (
                     <RefurbUnitRow
                       key={`${u.id}-${i}`}
                       unit={u}
-                      onToggled={onToggled}
-                      phoneLabel={qty > 1 ? `Phone ${i + 1} of ${qty}` : undefined}
+                      onToggled={(nowLive) => onToggled(nowLive, qty)}
+                      phoneLabel={qty > 1 ? `Device ${i + 1} of ${qty}` : undefined}
                       showControls={i === 0}
                     />
                   ));

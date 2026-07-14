@@ -22,8 +22,9 @@ export type RefurbModelSummary = {
   modelName: string;
   slug: string;
   image: string | null;
-  unitCount: number; // distinct units (products) we hold
-  totalStock: number; // sum of unit quantities
+  unitCount: number; // trade-in batches (products) behind this model
+  totalStock: number; // total DEVICES in stock (sum of quantities)
+  liveStock: number; // devices that are live on the storefront
   liveCount: number;
   draftCount: number;
   sizes: string[];
@@ -73,6 +74,7 @@ export async function listRefurbModels(options: { category?: string; search?: st
     const size = sizeFromTitle(n.title);
     const price = Number(n.variants.nodes[0]?.price ?? 0);
     const image = n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? seedImageForTitle(n.title);
+    const isLive = n.status === "ACTIVE";
     const m = byModel.get(key);
     if (!m) {
       byModel.set(key, {
@@ -81,16 +83,19 @@ export async function listRefurbModels(options: { category?: string; search?: st
         image,
         unitCount: 1,
         totalStock: qty,
-        liveCount: n.status === "ACTIVE" ? 1 : 0,
-        draftCount: n.status === "ACTIVE" ? 0 : 1,
+        liveStock: isLive ? qty : 0,
+        liveCount: isLive ? 1 : 0,
+        draftCount: isLive ? 0 : 1,
         sizes: size ? [size] : [],
         fromPrice: price > 0 ? price : null,
       });
     } else {
       m.unitCount += 1;
       m.totalStock += qty;
-      if (n.status === "ACTIVE") m.liveCount += 1;
-      else m.draftCount += 1;
+      if (isLive) {
+        m.liveStock += qty;
+        m.liveCount += 1;
+      } else m.draftCount += 1;
       if (size && !m.sizes.includes(size)) m.sizes.push(size);
       if (price > 0 && (m.fromPrice == null || price < m.fromPrice)) m.fromPrice = price;
       if (!m.image) m.image = image;
@@ -298,23 +303,44 @@ const STATUS_MUTATION = `
   }
 `;
 
+const SET_QTY_MUTATION = `
+  mutation SetQty($m: [MetafieldsSetInput!]!) {
+    metafieldsSet(metafields: $m) { userErrors { message } }
+  }
+`;
+
 /**
- * Mark refurb units as SOLD once a customer buys them: set Shopify status to
- * ARCHIVED so `status:active` stock queries (storefront + admin counts) stop
- * returning them. One physical unit = one product, so a sold unit leaves stock
- * entirely; when a model's last unit sells, the storefront flips to "Notify when
- * in stock". Best-effort — never throws, so a paid order is never lost if Shopify
- * is briefly unavailable (staff can archive manually from Refurb stock).
+ * Reduce refurb stock when a customer buys: each product holds a device-quantity
+ * (`inventory.quantity`), so a purchase DECREMENTS it by the amount bought. When
+ * the last device of a unit sells (quantity hits 0) the product is ARCHIVED, so
+ * the model's stock count drops and — once its last unit is gone — the storefront
+ * flips to "Notify when in stock". Best-effort — never throws, so a paid order is
+ * never lost if Shopify is briefly unavailable.
  */
-export async function markRefurbUnitsSold(productIds: string[]): Promise<void> {
-  if (!productIds.length || !isShopifyAdminConfigured()) return;
-  const unique = [...new Set(productIds.filter(Boolean))];
+export async function markRefurbUnitsSold(sold: { productId: string; qty: number }[]): Promise<void> {
+  if (!sold.length || !isShopifyAdminConfigured()) return;
   await Promise.all(
-    unique.map(async (id) => {
+    sold.map(async ({ productId, qty }) => {
+      if (!productId) return;
       try {
-        await adminRequest(STATUS_MUTATION, { input: { id, status: "ARCHIVED" } }, { noStore: true });
+        const data = await adminRequest<{ node: { qty: { value: string } | null } | null }>(
+          `query($id: ID!){ node(id: $id){ ... on Product { qty: metafield(namespace: "inventory", key: "quantity") { value } } } }`,
+          { id: productId },
+          { noStore: true },
+        );
+        const current = Math.max(1, Math.floor(Number(data.node?.qty?.value ?? 1)) || 1);
+        const next = current - Math.max(1, Math.floor(qty) || 1);
+        if (next <= 0) {
+          await adminRequest(STATUS_MUTATION, { input: { id: productId, status: "ARCHIVED" } }, { noStore: true });
+        } else {
+          await adminRequest(
+            SET_QTY_MUTATION,
+            { m: [{ ownerId: productId, namespace: "inventory", key: "quantity", type: "number_integer", value: String(next) }] },
+            { noStore: true },
+          );
+        }
       } catch (err) {
-        console.error(`[inventory] markRefurbUnitsSold failed for ${id}:`, err);
+        console.error(`[inventory] markRefurbUnitsSold failed for ${productId}:`, err);
       }
     }),
   );

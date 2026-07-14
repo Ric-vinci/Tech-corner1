@@ -27,7 +27,7 @@ export default function RefurbModelList({ models, category, search, total, live 
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Models" value={models.length} />
-        <StatCard label={category ? "Units (filtered)" : "Units in stock"} value={total} />
+        <StatCard label={category ? "Devices (filtered)" : "Devices in stock"} value={total} />
         <StatCard label="Live on storefront" value={live} />
       </div>
 
@@ -52,10 +52,9 @@ export default function RefurbModelList({ models, category, search, total, live 
                 <tr className="border-b border-grey-light bg-grey-lightest text-left text-xs uppercase tracking-wide text-grey-dark">
                   <th className="px-5 py-3 font-medium">Model</th>
                   <th className="px-3 py-3 font-medium">Sizes</th>
-                  <th className="px-3 py-3 text-right font-medium">Units</th>
                   <th className="px-3 py-3 text-right font-medium">In stock</th>
+                  <th className="px-3 py-3 text-right font-medium">Live</th>
                   <th className="px-3 py-3 text-right font-medium">From</th>
-                  <th className="px-3 py-3 text-center font-medium">Live</th>
                   <th className="px-5 py-3 text-right font-medium"></th>
                 </tr>
               </thead>
@@ -83,18 +82,17 @@ export default function RefurbModelList({ models, category, search, total, live 
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-right tabular-nums text-grey-dark">{m.unitCount}</td>
                     <td className="px-3 py-4 text-right">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${m.totalStock > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"}`}>
                         {m.totalStock}
                       </span>
                     </td>
-                    <td className="px-3 py-4 text-right tabular-nums">{money(m.fromPrice)}</td>
-                    <td className="px-3 py-4 text-center">
-                      <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${m.liveCount > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"}`}>
-                        {m.liveCount}/{m.unitCount}
+                    <td className="px-3 py-4 text-right">
+                      <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${m.liveStock > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"}`}>
+                        {m.liveStock}/{m.totalStock}
                       </span>
                     </td>
+                    <td className="px-3 py-4 text-right tabular-nums">{money(m.fromPrice)}</td>
                     <td className="px-5 py-4 text-right">
                       <Link href={`/admin/inventory/model/${m.slug}`} className="text-sm font-medium text-blue hover:underline">
                         View →

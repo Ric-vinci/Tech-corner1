@@ -65,8 +65,8 @@ export async function POST(request: Request) {
   // per product, so buying it removes it from stock and, when it's the model's
   // last unit, the storefront flips to "Notify when in stock".
   const soldProductIds = items
-    .map((i) => (i.variantId ? prices.get(i.variantId)?.productId : null))
-    .filter((id): id is string => Boolean(id));
+    .map((i) => ({ productId: i.variantId ? prices.get(i.variantId)?.productId ?? null : null, qty: i.quantity }))
+    .filter((u): u is { productId: string; qty: number } => Boolean(u.productId));
   const supabase = getSupabaseAdmin();
 
   const baseRow = {

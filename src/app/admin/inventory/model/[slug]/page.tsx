@@ -62,8 +62,8 @@ export default async function AdminRefurbModelPage({ params, searchParams }: Pro
   const sizeGb = (s: string) => (/tb/i.test(s) ? parseFloat(s) * 1024 : parseFloat(s) || 0);
   const sizeGroups = [...groups.entries()].sort((a, b) => sizeGb(a[0]) - sizeGb(b[0]));
 
-  const live = rows.filter((r) => r.live).length;
   const totalStock = rows.reduce((n, r) => n + (r.stockQty ?? 1), 0);
+  const liveDevices = rows.filter((r) => r.live).reduce((n, r) => n + (r.stockQty ?? 1), 0);
 
   return (
     <div className="space-y-6">
@@ -71,12 +71,12 @@ export default async function AdminRefurbModelPage({ params, searchParams }: Pro
         <Link href="/admin/inventory" className="text-sm text-blue hover:underline">← All models</Link>
         <h1 className="mt-2 font-heading text-2xl font-semibold tracking-tight">{modelName}</h1>
         <p className="mt-1 text-sm text-grey-dark">
-          {rows.length} unit{rows.length === 1 ? "" : "s"} · {totalStock} in stock · {live} live. Units are grouped by
-          storage size; set a resale price and publish each one.
+          {totalStock} device{totalStock === 1 ? "" : "s"} in stock · {liveDevices} live. Devices are grouped by
+          storage size; publishing a trade-in lists all its phones at once.
         </p>
       </div>
 
-      <RefurbModelDetail sizeGroups={sizeGroups} totalUnits={rows.length} totalStock={totalStock} live={live} />
+      <RefurbModelDetail sizeGroups={sizeGroups} totalStock={totalStock} live={liveDevices} />
     </div>
   );
 }

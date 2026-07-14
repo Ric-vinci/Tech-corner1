@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import RefurbModelList from "@/components/admin/RefurbModelList";
 import { getAdminSession } from "@/lib/admin/session";
-import { listRefurbModels, countRefurbUnits } from "@/lib/shopify/admin-inventory";
+import { listRefurbModels } from "@/lib/shopify/admin-inventory";
 import { isAdminCategory } from "@/lib/admin/categories";
 
 export const metadata = { title: "Refurb stock — 4gadgets Admin" };
@@ -17,10 +17,9 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
   const { category, q } = await searchParams;
   const activeCategory = isAdminCategory(category) ? category : undefined;
 
-  const [models, counts] = await Promise.all([
-    listRefurbModels({ category: activeCategory, search: q }),
-    countRefurbUnits(activeCategory),
-  ]);
+  const models = await listRefurbModels({ category: activeCategory, search: q });
+  const totalDevices = models.reduce((n, m) => n + m.totalStock, 0);
+  const liveDevices = models.reduce((n, m) => n + m.liveStock, 0);
 
   return (
     <div className="space-y-6">
@@ -32,7 +31,7 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
         </p>
       </div>
 
-      <RefurbModelList models={models} category={activeCategory} search={q} total={counts.total} live={counts.live} />
+      <RefurbModelList models={models} category={activeCategory} search={q} total={totalDevices} live={liveDevices} />
     </div>
   );
 }
