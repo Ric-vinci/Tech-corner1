@@ -37,7 +37,19 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 const money = (value: number | null) => (value == null ? "—" : `£${value.toFixed(2)}`);
 
-export function RefurbUnitRow({ unit, onToggled }: { unit: RefurbRow; onToggled: (nowLive: boolean) => void }) {
+export function RefurbUnitRow({
+  unit,
+  onToggled,
+  phoneLabel,
+  showControls = true,
+}: {
+  unit: RefurbRow;
+  onToggled: (nowLive: boolean) => void;
+  /** When expanding a unit into per-phone rows, a label like "Phone 2 of 5". */
+  phoneLabel?: string;
+  /** Price/publish controls are shown once per unit (on the first phone row). */
+  showControls?: boolean;
+}) {
   const [price, setPrice] = useState(unit.price != null ? String(unit.price) : "");
   const [live, setLive] = useState(unit.live);
   const [busy, setBusy] = useState<null | "price" | "publish">(null);
@@ -98,14 +110,20 @@ export function RefurbUnitRow({ unit, onToggled }: { unit: RefurbRow; onToggled:
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="truncate font-medium text-black">{unit.title}</span>
+              {unit.submissionId ? (
+                <Link href={`/admin/trade-ins/${unit.submissionId}`} className="truncate font-medium text-black hover:text-blue hover:underline">
+                  {unit.title}
+                </Link>
+              ) : (
+                <span className="truncate font-medium text-black">{unit.title}</span>
+              )}
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  (unit.stockQty ?? 0) > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"
+                  phoneLabel ? "bg-grey-lighter text-grey-dark" : (unit.stockQty ?? 0) > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"
                 }`}
-                title="Stock quantity for this unit (how many identical devices this trade-in covers)"
+                title={phoneLabel ? "One physical phone from this trade-in" : "Stock quantity for this unit (how many identical devices this trade-in covers)"}
               >
-                {unit.stockQty ?? 1} in stock
+                {phoneLabel ?? `${unit.stockQty ?? 1} in stock`}
               </span>
             </div>
             <div className="truncate font-mono text-xs text-grey-dark">{unit.sku ?? unit.handle}</div>
@@ -122,30 +140,36 @@ export function RefurbUnitRow({ unit, onToggled }: { unit: RefurbRow; onToggled:
       <td className="px-3 py-4 text-right tabular-nums text-grey-dark">{money(unit.cost)}</td>
 
       <td className="px-3 py-4">
-        <div className="flex items-center justify-end gap-1">
-          <span className="text-sm text-grey-dark">£</span>
-          <input
-            value={price}
-            onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
-            className={`w-20 rounded-md border px-2 py-1 text-right text-sm tabular-nums outline-none transition focus:border-black ${
-              priceDirty ? "border-green bg-green-light" : "border-grey-light bg-grey-lightest"
-            }`}
-            inputMode="decimal"
-          />
-          <button
-            type="button"
-            onClick={savePrice}
-            disabled={!priceDirty || busy !== null}
-            className="rounded-md border border-grey-light px-2 py-1 text-xs font-medium hover:border-grey-dark disabled:opacity-40"
-          >
-            {busy === "price" ? "…" : saved ? "✓" : "Save"}
-          </button>
-        </div>
-        {margin != null && (
-          <div className={`mt-1 text-right text-xs ${margin >= 0 ? "text-green" : "text-red-600"}`}>
-            {margin >= 0 ? "+" : ""}
-            {money(margin)} margin
-          </div>
+        {showControls ? (
+          <>
+            <div className="flex items-center justify-end gap-1">
+              <span className="text-sm text-grey-dark">£</span>
+              <input
+                value={price}
+                onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
+                className={`w-20 rounded-md border px-2 py-1 text-right text-sm tabular-nums outline-none transition focus:border-black ${
+                  priceDirty ? "border-green bg-green-light" : "border-grey-light bg-grey-lightest"
+                }`}
+                inputMode="decimal"
+              />
+              <button
+                type="button"
+                onClick={savePrice}
+                disabled={!priceDirty || busy !== null}
+                className="rounded-md border border-grey-light px-2 py-1 text-xs font-medium hover:border-grey-dark disabled:opacity-40"
+              >
+                {busy === "price" ? "…" : saved ? "✓" : "Save"}
+              </button>
+            </div>
+            {margin != null && (
+              <div className={`mt-1 text-right text-xs ${margin >= 0 ? "text-green" : "text-red-600"}`}>
+                {margin >= 0 ? "+" : ""}
+                {money(margin)} margin
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-right text-sm tabular-nums text-grey-dark">{money(unit.price ?? null)}</div>
         )}
       </td>
 
@@ -161,18 +185,20 @@ export function RefurbUnitRow({ unit, onToggled }: { unit: RefurbRow; onToggled:
 
       <td className="px-5 py-4">
         <div className="flex flex-col items-end gap-1.5">
-          <button
-            type="button"
-            onClick={togglePublish}
-            disabled={busy !== null}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-              live
-                ? "border border-grey-light bg-pure-white text-grey-dark hover:border-grey-dark hover:text-black"
-                : "bg-black text-pure-white hover:bg-black-off"
-            }`}
-          >
-            {busy === "publish" ? "Working…" : live ? "Unpublish" : "Publish to storefront"}
-          </button>
+          {showControls && (
+            <button
+              type="button"
+              onClick={togglePublish}
+              disabled={busy !== null}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                live
+                  ? "border border-grey-light bg-pure-white text-grey-dark hover:border-grey-dark hover:text-black"
+                  : "bg-black text-pure-white hover:bg-black-off"
+              }`}
+            >
+              {busy === "publish" ? "Working…" : live ? "Unpublish" : "Publish to storefront"}
+            </button>
+          )}
           {unit.submissionId && (
             <Link href={`/admin/trade-ins/${unit.submissionId}`} className="text-xs text-grey-dark hover:text-black hover:underline">
               View trade-in →

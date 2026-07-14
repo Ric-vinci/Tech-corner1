@@ -50,9 +50,20 @@ export default function RefurbModelDetail({ sizeGroups, totalUnits, totalStock, 
                 </tr>
               </thead>
               <tbody>
-                {units.map((u) => (
-                  <RefurbUnitRow key={u.id} unit={u} onToggled={onToggled} />
-                ))}
+                {units.flatMap((u) => {
+                  const qty = Math.max(1, u.stockQty ?? 1);
+                  // One row per physical phone. Price/publish shown once (first row);
+                  // all phones of a unit share the one price.
+                  return Array.from({ length: qty }, (_, i) => (
+                    <RefurbUnitRow
+                      key={`${u.id}-${i}`}
+                      unit={u}
+                      onToggled={onToggled}
+                      phoneLabel={qty > 1 ? `Phone ${i + 1} of ${qty}` : undefined}
+                      showControls={i === 0}
+                    />
+                  ));
+                })}
               </tbody>
             </table>
           </div>
