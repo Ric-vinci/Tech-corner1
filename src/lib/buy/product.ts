@@ -123,14 +123,16 @@ export async function getBuyProductDetail(handle: string): Promise<BuyProductDet
     units = forModel.map((n) => {
       const a = attrs.get(n.id);
       const v = n.variants.nodes[0];
-      // Backfill storage from the product name when inspection didn't record it
-      // ("… A226B 64GB" → "64GB"), so the buyable unit has a real storage.
+      // Give every unit CONCRETE specs so the PDP can match strictly (only real
+      // in-stock combos are buyable). When inspection didn't record a value, fall
+      // back to the same defaults the inspection form uses: storage from the name,
+      // colour = Black, grade = Good.
       const storageFromTitle = n.title.match(/(\d+)\s*(GB|TB)/i);
       return {
         variantId: v?.id ?? null,
         productId: n.id,
-        colour: a?.colour ?? null,
-        grade: a?.grade ?? null,
+        colour: a?.colour ?? "Black",
+        grade: a?.grade ?? "Good",
         storage: a?.storage ?? (storageFromTitle ? `${storageFromTitle[1]}${storageFromTitle[2].toUpperCase()}` : null),
         price: v?.price ? parseFloat(v.price) : 0,
       };

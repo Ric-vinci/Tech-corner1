@@ -8,12 +8,10 @@ import { addToBuyCart } from "@/lib/cart/buy-cart";
 
 const money = (v: number) => `£${v.toFixed(2)}`;
 
-// A unit whose inspection value is unknown (null) matches ANY selection for that
-// attribute — an un-inspected unit is still a real, buyable device.
-const fieldMatches = (unitValue: string | null | undefined, selected: string | null) => {
-  const u = (unitValue ?? "").toLowerCase();
-  return u === "" || u === (selected ?? "").toLowerCase();
-};
+// Strict match: a unit is only buyable for its exact colour / storage / grade.
+// (getBuyProductDetail fills concrete defaults so there are no null specs.)
+const fieldMatches = (unitValue: string | null | undefined, selected: string | null) =>
+  (unitValue ?? "").toLowerCase() === (selected ?? "").toLowerCase();
 
 export default function BuyProductDetailView({ detail }: { detail: BuyProductDetail }) {
   const { units, colourOptions, storageOptions, gradeOptions, gradePrices } = detail;
