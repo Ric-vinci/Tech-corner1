@@ -51,20 +51,15 @@ export default function RefurbModelDetail({ sizeGroups, totalStock, live: initia
                 </tr>
               </thead>
               <tbody>
-                {units.flatMap((u) => {
-                  const qty = Math.max(1, u.stockQty ?? 1);
-                  // One row per physical device. Price/publish shown once (first row);
-                  // publishing lists all `qty` devices of this trade-in at once.
-                  return Array.from({ length: qty }, (_, i) => (
-                    <RefurbUnitRow
-                      key={`${u.id}-${i}`}
-                      unit={u}
-                      onToggled={(nowLive) => onToggled(nowLive, qty)}
-                      phoneLabel={qty > 1 ? `Device ${i + 1} of ${qty}` : undefined}
-                      showControls={i === 0}
-                    />
-                  ));
-                })}
+                {/* One product = one physical device: every row has its own price + publish. */}
+                {units.map((u, i) => (
+                  <RefurbUnitRow
+                    key={u.id}
+                    unit={u}
+                    onToggled={(nowLive) => onToggled(nowLive, 1)}
+                    phoneLabel={`Device ${i + 1}`}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

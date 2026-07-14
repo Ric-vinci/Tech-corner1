@@ -137,6 +137,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
           featuredImage: { url: string } | null;
           imageUrl: { value: string } | null;
           qty: { value: string } | null;
+          sub: { value: string } | null;
           variants: { nodes: { price: string | null }[] };
         }[];
       };
@@ -150,6 +151,7 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
             featuredImage { url }
             imageUrl: metafield(namespace: "catalog", key: "image_url") { value }
             qty: metafield(namespace: "inventory", key: "quantity") { value }
+            sub: metafield(namespace: "trade_in", key: "submission_id") { value }
             variants(first: 1) { nodes { price } }
           }
         }
@@ -158,19 +160,38 @@ async function fetchInStockUnits(brand: string): Promise<CatalogProduct[]> {
       { noStore: true },
     );
 
-    // Join each unit to its source submission for the inspection attributes
-    // (grade / colour / storage) so the sidebar filters can act on real stock.
-    const ids = data.products.nodes.map((n) => n.id);
+    // Join each device to the trade-in it came from (via the submission_id metafield)
+    // for its inspection attributes (grade / colour / storage), so the sidebar filters
+    // and the PDP act on real stock. Falls back to the legacy product-id link.
     const attrs = new Map<string, { grade: string | null; colour: string | null; storage: string | null }>();
-    if (ids.length) {
-      // Best-effort: tolerate the pre-migration-006 schema (no inspection columns).
+    const nodes = data.products.nodes;
+    const subIds = [...new Set(nodes.map((n) => n.sub?.value).filter(Boolean) as string[])];
+    const legacyIds = nodes.filter((n) => !n.sub?.value).map((n) => n.id);
+    if (subIds.length || legacyIds.length) {
       try {
-        const { data: subs } = await getSupabaseAdmin()
-          .from("trade_in_submissions")
-          .select("shopify_inventory_product_id, grade, colour, storage")
-          .in("shopify_inventory_product_id", ids);
-        for (const s of (subs ?? []) as { shopify_inventory_product_id: string; grade: string | null; colour: string | null; storage: string | null }[]) {
-          attrs.set(s.shopify_inventory_product_id, { grade: s.grade, colour: s.colour, storage: s.storage });
+        const supabase = getSupabaseAdmin();
+        const bySubmission = new Map<string, { grade: string | null; colour: string | null; storage: string | null }>();
+        if (subIds.length) {
+          const { data: subs } = await supabase
+            .from("trade_in_submissions")
+            .select("id, grade, colour, storage")
+            .in("id", subIds);
+          for (const s of (subs ?? []) as { id: string; grade: string | null; colour: string | null; storage: string | null }[]) {
+            bySubmission.set(s.id, { grade: s.grade, colour: s.colour, storage: s.storage });
+          }
+        }
+        for (const n of nodes) {
+          const hit = n.sub?.value ? bySubmission.get(n.sub.value) : undefined;
+          if (hit) attrs.set(n.id, hit);
+        }
+        if (legacyIds.length) {
+          const { data: subs } = await supabase
+            .from("trade_in_submissions")
+            .select("shopify_inventory_product_id, grade, colour, storage")
+            .in("shopify_inventory_product_id", legacyIds);
+          for (const s of (subs ?? []) as { shopify_inventory_product_id: string; grade: string | null; colour: string | null; storage: string | null }[]) {
+            attrs.set(s.shopify_inventory_product_id, { grade: s.grade, colour: s.colour, storage: s.storage });
+          }
         }
       } catch {
         /* inspection columns not present yet */

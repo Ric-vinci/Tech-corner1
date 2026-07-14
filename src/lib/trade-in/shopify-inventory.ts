@@ -87,7 +87,6 @@ export async function createShopifyInventoryFromTradeIn(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const handle = `${baseHandle}-ti-${submission.id.slice(0, 8)}`;
   const title = `${submission.product_name} (Trade-in Refurb)`;
   const quantity = Math.max(1, Math.floor(Number(submission.quantity) || 1));
   // Resale price is anchored to the BASE device value (excludes the store-credit
@@ -98,43 +97,52 @@ export async function createShopifyInventoryFromTradeIn(
   );
   const price = String(refurbDefaultResalePrice(baseUnit));
   const { imageUrl, categoryTags } = await sourceProductMeta(submission.product_slug);
+  const tags = refurbTags(submission, categoryTags);
+  const shortId = submission.id.slice(0, 8);
 
-  const data = await adminRequest<{
-    productSet: {
-      product: { id: string; handle: string } | null;
-      userErrors: { field: string[]; message: string }[];
-    };
-  }>(PRODUCT_SET_MUTATION, {
-    identifier: { handle },
-    input: {
-      title,
-      handle,
-      status: "DRAFT",
-      productType: "Refurbished Mobile",
-      // category:*/brand:* from the source model, plus tags derived from the
-      // submission so the unit is always filterable + visible on the storefront.
-      tags: refurbTags(submission, categoryTags),
-      // Stock quantity (how many identical devices this trade-in covers) + the
-      // device photo so refurb stock isn't imageless.
-      metafields: [
-        { namespace: "inventory", key: "quantity", type: "number_integer", value: String(quantity) },
-        ...(imageUrl ? [{ namespace: CATALOG_NAMESPACE, key: METAFIELD_KEYS.imageUrl, type: "url", value: imageUrl }] : []),
-      ],
-      variants: [
-        {
-          price,
-          sku: `TI-${submission.id.slice(0, 8).toUpperCase()}`,
-          optionValues: [{ optionName: "Title", name: "Default Title" }],
-        },
-      ],
-      productOptions: [{ name: "Title", values: [{ name: "Default Title" }] }],
-    },
-  });
+  // ONE PRODUCT PER PHYSICAL DEVICE. A trade-in of 3 phones creates 3 products, so
+  // each device can be priced, published and sold independently — and selling one
+  // decrements the model's stock by exactly one.
+  const ids: string[] = [];
+  for (let i = 1; i <= quantity; i++) {
+    const handle = `${baseHandle}-ti-${shortId}-${i}`;
+    const data = await adminRequest<{
+      productSet: {
+        product: { id: string; handle: string } | null;
+        userErrors: { field: string[]; message: string }[];
+      };
+    }>(PRODUCT_SET_MUTATION, {
+      identifier: { handle },
+      input: {
+        title,
+        handle,
+        status: "DRAFT",
+        productType: "Refurbished Mobile",
+        tags,
+        // submission_id lets every device join back to the trade-in it came from
+        // (grade / colour / cost); the photo keeps refurb stock from being imageless.
+        metafields: [
+          { namespace: "trade_in", key: "submission_id", type: "single_line_text_field", value: submission.id },
+          ...(imageUrl ? [{ namespace: CATALOG_NAMESPACE, key: METAFIELD_KEYS.imageUrl, type: "url", value: imageUrl }] : []),
+        ],
+        variants: [
+          {
+            price,
+            sku: `TI-${shortId.toUpperCase()}-${i}`,
+            optionValues: [{ optionName: "Title", name: "Default Title" }],
+          },
+        ],
+        productOptions: [{ name: "Title", values: [{ name: "Default Title" }] }],
+      },
+    });
 
-  const errors = data.productSet.userErrors ?? [];
-  if (errors.length) {
-    throw new Error(`Shopify productSet failed: ${JSON.stringify(errors)}`);
+    const errors = data.productSet.userErrors ?? [];
+    if (errors.length) {
+      throw new Error(`Shopify productSet failed: ${JSON.stringify(errors)}`);
+    }
+    const id = data.productSet.product?.id;
+    if (id) ids.push(id);
   }
 
-  return data.productSet.product?.id ?? null;
+  return ids[0] ?? null;
 }

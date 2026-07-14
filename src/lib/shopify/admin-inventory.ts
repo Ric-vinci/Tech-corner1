@@ -109,10 +109,11 @@ export async function listRefurbModels(options: { category?: string; search?: st
 export async function fetchRefurbUnitsForModel(slug: string, category?: string): Promise<{ modelName: string; units: RefurbUnit[] }> {
   if (!isShopifyAdminConfigured()) return { modelName: "", units: [] };
   const query = refurbQuery(category);
-  const data = await adminRequest<{ products: { nodes: (ModelNode & { handle: string; variants: { nodes: { id: string; sku: string | null; price: string | null }[] }; createdAt: string })[] } }>(
+  const data = await adminRequest<{ products: { nodes: (ModelNode & { handle: string; sub: { value: string } | null; variants: { nodes: { id: string; sku: string | null; price: string | null }[] }; createdAt: string })[] } }>(
     `query { products(first: 250, query: "${query}", sortKey: CREATED_AT, reverse: true) {
       nodes { id handle title status createdAt featuredImage { url }
         imageUrl: metafield(namespace: "${CATALOG_NAMESPACE}", key: "${METAFIELD_KEYS.imageUrl}") { value }
+        sub: metafield(namespace: "trade_in", key: "submission_id") { value }
         variants(first: 1) { nodes { id sku price } } }
     } }`,
     undefined,
@@ -138,6 +139,7 @@ export async function fetchRefurbUnitsForModel(slug: string, category?: string):
       status: node.status,
       live: node.status === "ACTIVE",
       createdAt: node.createdAt,
+      submissionRef: node.sub?.value ?? null,
     });
   }
   return { modelName, units };
@@ -160,6 +162,8 @@ export type RefurbUnit = {
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
   live: boolean;
   createdAt: string;
+  /** The trade-in this device came from (submission_id metafield). */
+  submissionRef?: string | null;
 };
 
 export type RefurbPage = {

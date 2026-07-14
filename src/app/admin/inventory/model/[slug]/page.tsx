@@ -25,31 +25,50 @@ export default async function AdminRefurbModelPage({ params, searchParams }: Pro
   const { modelName, units } = await fetchRefurbUnitsForModel(slug, activeCategory);
   if (!units.length) notFound();
 
-  // Join each unit with the trade-in it came from (grade, per-unit cost, quantity).
-  const bySource = new Map<string, { submissionId: string; condition: string; cost: number; quantity: number }>();
-  const { data } = await getSupabaseAdmin()
-    .from("trade_in_submissions")
-    .select("id, shopify_inventory_product_id, condition, quoted_price, revised_price, quantity")
-    .in("shopify_inventory_product_id", units.map((u) => u.id));
-  for (const row of data ?? []) {
-    if (!row.shopify_inventory_product_id) continue;
+  // Each PRODUCT is one physical device. Join it to the trade-in it came from
+  // (submission_id metafield; legacy rows still link by product id) for grade +
+  // per-device cost.
+  type Source = { submissionId: string; condition: string; cost: number };
+  const supabase = getSupabaseAdmin();
+  const bySubmission = new Map<string, Source>();
+  const byProduct = new Map<string, Source>();
+
+  const subIds = [...new Set(units.map((u) => u.submissionRef).filter(Boolean) as string[])];
+  const legacyIds = units.filter((u) => !u.submissionRef).map((u) => u.id);
+  const toSource = (row: { id: string; condition: string; quoted_price: number | null; revised_price: number | null; quantity: number | null }): Source => {
     const qty = Math.max(1, Math.floor(Number(row.quantity) || 1));
-    bySource.set(row.shopify_inventory_product_id, {
+    return {
       submissionId: row.id,
       condition: row.condition,
-      cost: Number(row.revised_price ?? row.quoted_price ?? 0) / qty,
-      quantity: qty,
-    });
+      cost: Number(row.revised_price ?? row.quoted_price ?? 0) / qty, // per-device
+    };
+  };
+
+  if (subIds.length) {
+    const { data } = await supabase
+      .from("trade_in_submissions")
+      .select("id, condition, quoted_price, revised_price, quantity")
+      .in("id", subIds);
+    for (const row of data ?? []) bySubmission.set(row.id, toSource(row));
+  }
+  if (legacyIds.length) {
+    const { data } = await supabase
+      .from("trade_in_submissions")
+      .select("id, shopify_inventory_product_id, condition, quoted_price, revised_price, quantity")
+      .in("shopify_inventory_product_id", legacyIds);
+    for (const row of data ?? []) {
+      if (row.shopify_inventory_product_id) byProduct.set(row.shopify_inventory_product_id, toSource(row));
+    }
   }
 
   const rows: RefurbRow[] = units.map((unit) => {
-    const source = bySource.get(unit.id);
+    const source = unit.submissionRef ? bySubmission.get(unit.submissionRef) : byProduct.get(unit.id);
     return {
       ...unit,
       condition: source?.condition ?? null,
       cost: source?.cost ?? null,
       submissionId: source?.submissionId ?? null,
-      stockQty: source?.quantity ?? 1,
+      stockQty: 1, // one product = one physical device
     };
   });
 

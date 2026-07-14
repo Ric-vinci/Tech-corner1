@@ -94,26 +94,49 @@ export async function getBuyProductDetail(handle: string): Promise<BuyProductDet
   let units: BuyUnit[] = [];
   try {
     const data = await adminRequest<{
-      products: { nodes: { id: string; title: string; featuredImage: { url: string } | null; imageUrl: { value: string } | null; variants: { nodes: { id: string; price: string | null }[] } }[] };
+      products: { nodes: { id: string; title: string; featuredImage: { url: string } | null; imageUrl: { value: string } | null; sub: { value: string } | null; variants: { nodes: { id: string; price: string | null }[] } }[] };
     }>(
       `query { products(first: 250, query: "tag:trade-in AND status:active") {
-        nodes { id title featuredImage { url } imageUrl: metafield(namespace: "catalog", key: "image_url") { value } variants(first: 1) { nodes { id price } } }
+        nodes { id title featuredImage { url }
+          imageUrl: metafield(namespace: "catalog", key: "image_url") { value }
+          sub: metafield(namespace: "trade_in", key: "submission_id") { value }
+          variants(first: 1) { nodes { id price } } }
       } }`,
       undefined,
       { noStore: true },
     );
     const forModel = data.products.nodes.filter((n) => cleanModelName(n.title).toLowerCase() === modelName.toLowerCase());
 
-    // Inspection attributes (colour/grade/storage) per unit.
+    // Inspection attributes (colour/grade/storage) per device — joined via the
+    // trade-in it came from (submission_id metafield), with a legacy product-id fallback.
     const attrs = new Map<string, { colour: string | null; grade: string | null; storage: string | null }>();
     if (forModel.length) {
       try {
-        const { data: subs } = await getSupabaseAdmin()
-          .from("trade_in_submissions")
-          .select("shopify_inventory_product_id, colour, grade, storage")
-          .in("shopify_inventory_product_id", forModel.map((n) => n.id));
-        for (const s of (subs ?? []) as { shopify_inventory_product_id: string; colour: string | null; grade: string | null; storage: string | null }[]) {
-          attrs.set(s.shopify_inventory_product_id, { colour: s.colour, grade: s.grade, storage: s.storage });
+        const supabase = getSupabaseAdmin();
+        const subIds = [...new Set(forModel.map((n) => n.sub?.value).filter(Boolean) as string[])];
+        const legacyIds = forModel.filter((n) => !n.sub?.value).map((n) => n.id);
+        if (subIds.length) {
+          const { data: subs } = await supabase
+            .from("trade_in_submissions")
+            .select("id, colour, grade, storage")
+            .in("id", subIds);
+          const bySubmission = new Map<string, { colour: string | null; grade: string | null; storage: string | null }>();
+          for (const s of (subs ?? []) as { id: string; colour: string | null; grade: string | null; storage: string | null }[]) {
+            bySubmission.set(s.id, { colour: s.colour, grade: s.grade, storage: s.storage });
+          }
+          for (const n of forModel) {
+            const hit = n.sub?.value ? bySubmission.get(n.sub.value) : undefined;
+            if (hit) attrs.set(n.id, hit);
+          }
+        }
+        if (legacyIds.length) {
+          const { data: subs } = await supabase
+            .from("trade_in_submissions")
+            .select("shopify_inventory_product_id, colour, grade, storage")
+            .in("shopify_inventory_product_id", legacyIds);
+          for (const s of (subs ?? []) as { shopify_inventory_product_id: string; colour: string | null; grade: string | null; storage: string | null }[]) {
+            attrs.set(s.shopify_inventory_product_id, { colour: s.colour, grade: s.grade, storage: s.storage });
+          }
         }
       } catch {
         /* pre-migration-006 */
