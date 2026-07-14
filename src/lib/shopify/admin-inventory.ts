@@ -3,9 +3,140 @@ import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-clie
 import { resolveImageUrl } from "@/lib/shopify/config";
 import { CATALOG_NAMESPACE, METAFIELD_KEYS } from "@/lib/shopify/metafields";
 import { afterCursorForPage, countProducts } from "@/lib/shopify/paginate";
-import { cleanModelName } from "@/lib/buy/catalog";
+import { cleanModelName, seedImageForTitle } from "@/lib/buy/catalog";
 
 const PAGE_SIZE = 25;
+
+/** Storage size embedded in a refurb title ("… A226B 64GB" → "64GB"). */
+export function sizeFromTitle(title: string): string | null {
+  const m = title.match(/(\d+)\s*(GB|TB)/i);
+  return m ? `${m[1]}${m[2].toUpperCase()}` : null;
+}
+
+function slugifyModel(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/** One catalogue MODEL rolled up from its refurb units (for the grouped admin view). */
+export type RefurbModelSummary = {
+  modelName: string;
+  slug: string;
+  image: string | null;
+  unitCount: number; // distinct units (products) we hold
+  totalStock: number; // sum of unit quantities
+  liveCount: number;
+  draftCount: number;
+  sizes: string[];
+  fromPrice: number | null;
+};
+
+type ModelNode = {
+  id: string;
+  title: string;
+  status: RefurbUnit["status"];
+  featuredImage: { url: string } | null;
+  imageUrl: { value: string } | null;
+  qty: { value: string } | null;
+  variants: { nodes: { price: string | null }[] };
+};
+
+const MODEL_FIELDS = `
+  id title status
+  featuredImage { url }
+  imageUrl: metafield(namespace: "${CATALOG_NAMESPACE}", key: "${METAFIELD_KEYS.imageUrl}") { value }
+  qty: metafield(namespace: "inventory", key: "quantity") { value }
+  variants(first: 1) { nodes { price } }
+`;
+
+function refurbQuery(category?: string, search?: string): string {
+  const parts = ["tag:trade-in"];
+  if (category) parts.push(`tag:"category:${category}"`);
+  if (search?.trim()) parts.push(`title:*${search.trim()}*`);
+  return parts.join(" AND ");
+}
+
+/** All refurb units grouped into catalogue models (Level 1 of the grouped admin view). */
+export async function listRefurbModels(options: { category?: string; search?: string } = {}): Promise<RefurbModelSummary[]> {
+  if (!isShopifyAdminConfigured()) return [];
+  const query = refurbQuery(options.category, options.search);
+  const data = await adminRequest<{ products: { nodes: ModelNode[] } }>(
+    `query { products(first: 250, query: "${query}", sortKey: CREATED_AT, reverse: true) { nodes { ${MODEL_FIELDS} } } }`,
+    undefined,
+    { noStore: true },
+  );
+
+  const byModel = new Map<string, RefurbModelSummary>();
+  for (const n of data.products.nodes) {
+    const modelName = cleanModelName(n.title.replace(REFURB_SUFFIX, ""));
+    const key = modelName.toLowerCase();
+    const qty = Math.max(1, Math.floor(Number(n.qty?.value ?? 1)) || 1);
+    const size = sizeFromTitle(n.title);
+    const price = Number(n.variants.nodes[0]?.price ?? 0);
+    const image = n.imageUrl?.value ? resolveImageUrl(n.imageUrl.value) : n.featuredImage?.url ?? seedImageForTitle(n.title);
+    const m = byModel.get(key);
+    if (!m) {
+      byModel.set(key, {
+        modelName,
+        slug: slugifyModel(modelName),
+        image,
+        unitCount: 1,
+        totalStock: qty,
+        liveCount: n.status === "ACTIVE" ? 1 : 0,
+        draftCount: n.status === "ACTIVE" ? 0 : 1,
+        sizes: size ? [size] : [],
+        fromPrice: price > 0 ? price : null,
+      });
+    } else {
+      m.unitCount += 1;
+      m.totalStock += qty;
+      if (n.status === "ACTIVE") m.liveCount += 1;
+      else m.draftCount += 1;
+      if (size && !m.sizes.includes(size)) m.sizes.push(size);
+      if (price > 0 && (m.fromPrice == null || price < m.fromPrice)) m.fromPrice = price;
+      if (!m.image) m.image = image;
+    }
+  }
+  const sizeGb = (s: string) => (/tb/i.test(s) ? parseFloat(s) * 1024 : parseFloat(s));
+  return [...byModel.values()].map((m) => ({ ...m, sizes: m.sizes.sort((a, b) => sizeGb(a) - sizeGb(b)) }));
+}
+
+/** Every refurb unit for one model slug (Level 2 — the model detail, grouped by size). */
+export async function fetchRefurbUnitsForModel(slug: string, category?: string): Promise<{ modelName: string; units: RefurbUnit[] }> {
+  if (!isShopifyAdminConfigured()) return { modelName: "", units: [] };
+  const query = refurbQuery(category);
+  const data = await adminRequest<{ products: { nodes: (ModelNode & { handle: string; variants: { nodes: { id: string; sku: string | null; price: string | null }[] }; createdAt: string })[] } }>(
+    `query { products(first: 250, query: "${query}", sortKey: CREATED_AT, reverse: true) {
+      nodes { id handle title status createdAt featuredImage { url }
+        imageUrl: metafield(namespace: "${CATALOG_NAMESPACE}", key: "${METAFIELD_KEYS.imageUrl}") { value }
+        variants(first: 1) { nodes { id sku price } } }
+    } }`,
+    undefined,
+    { noStore: true },
+  );
+
+  let modelName = "";
+  const units: RefurbUnit[] = [];
+  for (const node of data.products.nodes) {
+    const clean = cleanModelName(node.title.replace(REFURB_SUFFIX, ""));
+    if (slugifyModel(clean) !== slug) continue;
+    modelName = clean;
+    const variant = node.variants.nodes[0];
+    const rawImage = node.imageUrl?.value;
+    units.push({
+      id: node.id,
+      handle: node.handle,
+      title: node.title.replace(REFURB_SUFFIX, ""),
+      sku: variant?.sku ?? null,
+      variantId: variant?.id ?? null,
+      image: rawImage ? resolveImageUrl(rawImage) : node.featuredImage?.url ?? seedImageForTitle(node.title),
+      price: variant?.price != null ? Number(variant.price) : null,
+      status: node.status,
+      live: node.status === "ACTIVE",
+      createdAt: node.createdAt,
+    });
+  }
+  return { modelName, units };
+}
 
 /**
  * A refurb *unit* — one physical device Tech Corner owns, created when a trade-in

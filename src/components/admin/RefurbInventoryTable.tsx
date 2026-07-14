@@ -37,7 +37,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 const money = (value: number | null) => (value == null ? "—" : `£${value.toFixed(2)}`);
 
-function Row({ unit, onToggled }: { unit: RefurbRow; onToggled: (nowLive: boolean) => void }) {
+export function RefurbUnitRow({ unit, onToggled }: { unit: RefurbRow; onToggled: (nowLive: boolean) => void }) {
   const [price, setPrice] = useState(unit.price != null ? String(unit.price) : "");
   const [live, setLive] = useState(unit.live);
   const [busy, setBusy] = useState<null | "price" | "publish">(null);
@@ -239,7 +239,7 @@ export default function RefurbInventoryTable({
               </thead>
               <tbody>
                 {rows.map((unit) => (
-                  <Row key={unit.id} unit={unit} onToggled={onToggled} />
+                  <RefurbUnitRow key={unit.id} unit={unit} onToggled={onToggled} />
                 ))}
               </tbody>
             </table>
