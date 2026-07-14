@@ -11,8 +11,8 @@ export type RefurbRow = RefurbUnit & {
   condition: string | null;
   cost: number | null;
   submissionId: string | null;
-  /** How many ACTIVE units of this model are in stock (across all units). */
-  modelStock?: number;
+  /** This unit's own stock quantity (how many identical devices this trade-in covers). */
+  stockQty?: number;
 };
 
 type Props = {
@@ -101,11 +101,11 @@ function Row({ unit, onToggled }: { unit: RefurbRow; onToggled: (nowLive: boolea
               <span className="truncate font-medium text-black">{unit.title}</span>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  (unit.modelStock ?? 0) > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"
+                  (unit.stockQty ?? 0) > 0 ? "bg-green-light text-green" : "bg-grey-lighter text-grey-dark"
                 }`}
-                title="Units of this model currently in stock (live on the storefront)"
+                title="Stock quantity for this unit (how many identical devices this trade-in covers)"
               >
-                {unit.modelStock ?? 0} in stock
+                {unit.stockQty ?? 1} in stock
               </span>
             </div>
             <div className="truncate font-mono text-xs text-grey-dark">{unit.sku ?? unit.handle}</div>

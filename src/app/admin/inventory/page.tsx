@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import RefurbInventoryTable, { type RefurbRow } from "@/components/admin/RefurbInventoryTable";
 import { getAdminSession } from "@/lib/admin/session";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { listRefurbUnits, countRefurbUnits, stockCountByModel } from "@/lib/shopify/admin-inventory";
-import { cleanModelName } from "@/lib/buy/catalog";
+import { listRefurbUnits, countRefurbUnits } from "@/lib/shopify/admin-inventory";
+import { seedImageForTitle } from "@/lib/buy/catalog";
 import { isAdminCategory } from "@/lib/admin/categories";
 
 export const metadata = { title: "Refurb stock — 4gadgets Admin" };
@@ -20,31 +20,33 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
   const activeCategory = isAdminCategory(category) ? category : undefined;
   const activeStatus = status === "live" || status === "draft" ? status : undefined;
 
-  const [page, counts, modelStock] = await Promise.all([
+  const [page, counts] = await Promise.all([
     listRefurbUnits({ page: Number(pageParam) || 1, category: activeCategory, status: activeStatus, search: q }),
     countRefurbUnits(activeCategory),
-    stockCountByModel(), // active units per model → "N in stock" per row
   ]);
 
-  // Join each Shopify unit with the trade-in it came from (grade + what it cost).
+  // Join each Shopify unit with the trade-in it came from (grade, cost, quantity).
   const productIds = page.units.map((u) => u.id);
   const bySource = new Map<
     string,
-    { submissionId: string; condition: string; cost: number }
+    { submissionId: string; condition: string; cost: number; quantity: number }
   >();
 
   if (productIds.length) {
     const { data } = await getSupabaseAdmin()
       .from("trade_in_submissions")
-      .select("id, shopify_inventory_product_id, condition, quoted_price, revised_price")
+      .select("id, shopify_inventory_product_id, condition, quoted_price, revised_price, quantity")
       .in("shopify_inventory_product_id", productIds);
 
     for (const row of data ?? []) {
       if (!row.shopify_inventory_product_id) continue;
+      const qty = Math.max(1, Math.floor(Number(row.quantity) || 1));
       bySource.set(row.shopify_inventory_product_id, {
         submissionId: row.id,
         condition: row.condition,
-        cost: Number(row.revised_price ?? row.quoted_price ?? 0),
+        // Per-UNIT cost so margin vs the per-unit resale price is meaningful.
+        cost: Number(row.revised_price ?? row.quoted_price ?? 0) / qty,
+        quantity: qty,
       });
     }
   }
@@ -53,10 +55,12 @@ export default async function AdminInventoryPage({ searchParams }: Props) {
     const source = bySource.get(unit.id);
     return {
       ...unit,
+      image: unit.image ?? seedImageForTitle(unit.title),
       condition: source?.condition ?? null,
       cost: source?.cost ?? null,
       submissionId: source?.submissionId ?? null,
-      modelStock: modelStock.get(cleanModelName(unit.title).toLowerCase()) ?? 0,
+      // This unit's own stock quantity (not the model total).
+      stockQty: source?.quantity ?? 1,
     };
   });
 
