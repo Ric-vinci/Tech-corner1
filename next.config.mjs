@@ -15,9 +15,10 @@ function cdnRemotePattern() {
 }
 
 const remotePatterns = [
-  { protocol: "https", hostname: "www.4gadgets.co.uk", pathname: "/**" },
+  // Product images now live in Supabase Storage (public bucket).
+  { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
+  { protocol: "https", hostname: "www.4gadgets.co.uk", pathname: "/**" }, // legacy fallback
   { protocol: "https", hostname: "cdn.shopify.com", pathname: "/**" },
-  { protocol: "https", hostname: "tech-corner-dripetja-images.s3.eu-north-1.amazonaws.com", pathname: "/**" },
 ].filter(Boolean);
 
 const cdnPattern = cdnRemotePattern();
