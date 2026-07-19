@@ -1,6 +1,7 @@
 import type { BrandItem, BreadcrumbItem, CatalogProduct, FilterGroup, ModelFilterLink, SellCategoryConfig, SellProductDetail } from "./types";
 import { sellTradeIns } from "./content";
 import samsungMobileData from "./generated/samsung-mobile.json";
+import appleMobileData from "./generated/apple-mobile.json";
 import { fetchBrandSellDetailsFromShopify, fetchSellProductFromShopify } from "@/lib/shopify/catalog";
 import { fetchBrandMetaFromShopify, fetchSellCategoryFromShopify } from "@/lib/shopify/collections";
 import { fetchBrandSellPageFromShopify } from "@/lib/shopify/catalog";
@@ -59,28 +60,44 @@ const cameraFilters: FilterGroup[] = [
 ];
 
 const appleMobileProducts = sellTradeIns.filter((p) => p.name.startsWith("Apple"));
-const samsungMobileProducts: SellProductDetail[] = (samsungMobileData.products as CatalogProduct[]).map((p) => {
-  const priceMatch = p.price.match(/£([\d.]+)/);
-  const priceWorking = priceMatch ? parseFloat(priceMatch[1]) : 20;
-  const familyName = p.name.replace(/\s+\d+(\.\d+)?(GB|TB)$/i, "");
-  const familySlug = familyName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return {
-    ...p,
-    image: resolveImageUrl(p.image),
-    brand: "Samsung",
-    brandSlug: "samsung",
-    categorySlug: "mobile",
-    priceWorking,
-    priceFaulty: Math.max(5, Math.round(priceWorking * 0.25)),
-    priceNoPower: 0,
-    familyLabel: `Trade In Your ${familyName}`,
-    familyHref: `/sell-my/mobile/samsung/trade-in-your-${familySlug.replace(/^samsung-/, "samsung-")}`,
-  };
-});
-const samsungModelLinks = samsungMobileData.modelLinks as ModelFilterLink[];
+/** Map a generated mobile seed file into full sell products for a brand. */
+function mapMobileSeed(data: typeof samsungMobileData, brandSlug: string, brandLabel: string): SellProductDetail[] {
+  return (data.products as CatalogProduct[]).map((p) => {
+    const priceMatch = p.price.match(/£([\d.]+)/);
+    const priceWorking = priceMatch ? parseFloat(priceMatch[1]) : 20;
+    const familyName = p.name.replace(/\s+\d+(\.\d+)?(GB|TB)$/i, "");
+    const familySlug = familyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return {
+      ...p,
+      image: resolveImageUrl(p.image),
+      brand: brandLabel,
+      brandSlug,
+      categorySlug: "mobile",
+      priceWorking,
+      priceFaulty: Math.max(5, Math.round(priceWorking * 0.25)),
+      priceNoPower: 0,
+      familyLabel: `Trade In Your ${familyName}`,
+      familyHref: `/sell-my/mobile/${brandSlug}/trade-in-your-${familySlug}`,
+    };
+  });
+}
+
+/** Seeded mobile brands (curated trade-in catalogues from the reference site). */
+const MOBILE_SEED: Record<string, { products: SellProductDetail[]; modelLinks: ModelFilterLink[]; total: number }> = {
+  samsung: {
+    products: mapMobileSeed(samsungMobileData, "samsung", "Samsung"),
+    modelLinks: samsungMobileData.modelLinks as ModelFilterLink[],
+    total: samsungMobileData.totalProducts,
+  },
+  apple: {
+    products: mapMobileSeed(appleMobileData as typeof samsungMobileData, "apple", "Apple"),
+    modelLinks: (appleMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: appleMobileData.totalProducts,
+  },
+};
+
+const samsungMobileProducts = MOBILE_SEED.samsung.products;
+const samsungModelLinks = MOBILE_SEED.samsung.modelLinks;
 
 const sellBrandCatalogMeta: Record<string, Record<string, { totalProducts: number }>> = {
   mobile: {
@@ -291,10 +308,14 @@ export async function getSellCategoryAsync(slug: string): Promise<SellCategoryCo
   };
 }
 
+/** Seeded model links for a mobile brand (Samsung, Apple, …), or []. */
+function mobileModelLinks(category: string, brand: string): ModelFilterLink[] {
+  return category === "mobile" ? MOBILE_SEED[brand]?.modelLinks ?? [] : [];
+}
+
 export function getSellBrandProducts(category: string, brand: string): CatalogProduct[] {
-  if (category === "mobile" && brand === "samsung") {
-    return samsungMobileProducts;
-  }
+  const seed = category === "mobile" ? MOBILE_SEED[brand] : undefined;
+  if (seed?.products.length) return seed.products;
 
   const specific = sellBrandProducts[category]?.[brand];
   if (specific?.length) return specific;
@@ -325,9 +346,9 @@ export type SellBrandCatalogPage = {
   sort: SellCatalogParams["sort"];
 };
 
-function resolveSamsungModelLinks(pageModelLinks: ModelFilterLink[], showingAll: boolean): ModelFilterLink[] {
-  if (showingAll) return samsungModelLinks;
-  return pageModelLinks.length ? pageModelLinks : samsungModelLinks.slice(0, 20);
+function resolveSeedModelLinks(brandLinks: ModelFilterLink[], pageModelLinks: ModelFilterLink[], showingAll: boolean): ModelFilterLink[] {
+  if (showingAll) return brandLinks;
+  return pageModelLinks.length ? pageModelLinks : brandLinks.slice(0, 20);
 }
 
 function paginateStaticProducts(
@@ -370,7 +391,7 @@ export function getSellBrandFamilyPage(
   brand: string,
   familySlug: string,
 ): SellBrandFamilyPage | null {
-  const modelLinks = category === "mobile" && brand === "samsung" ? samsungModelLinks : [];
+  const modelLinks = mobileModelLinks(category, brand);
   const family = findModelFamily(modelLinks, familySlug);
   if (!family) return null;
 
@@ -419,10 +440,7 @@ export async function getSellBrandFamilyPageAsync(
 }
 
 export function getSellBrandSidebarLinks(category: string, brand: string): ModelFilterLink[] {
-  if (category === "mobile" && brand === "samsung") {
-    return samsungModelLinks;
-  }
-  return [];
+  return mobileModelLinks(category, brand);
 }
 
 export async function getSellBrandCatalogPageAsync(
@@ -443,10 +461,10 @@ export async function getSellBrandCatalogPageAsync(
   // page is never blank. This is deliberately independent of the fallback flag —
   // an empty sell page is never useful, and the seed is what users trade in.
   if (fromShopify && fromShopify.products.length > 0) {
-    const modelLinks =
-      category === "mobile" && brand === "samsung"
-        ? resolveSamsungModelLinks(fromShopify.modelLinks, fromShopify.showingAll)
-        : fromShopify.modelLinks;
+    const seedLinks = mobileModelLinks(category, brand);
+    const modelLinks = seedLinks.length
+      ? resolveSeedModelLinks(seedLinks, fromShopify.modelLinks, fromShopify.showingAll)
+      : fromShopify.modelLinks;
 
     return {
       products: fromShopify.products,
@@ -482,10 +500,10 @@ export async function getSellBrandCatalogPageAsync(
   }
 
   const paged = paginateStaticProducts(staticProducts, catalogParams);
-  const modelLinks =
-    category === "mobile" && brand === "samsung"
-      ? resolveSamsungModelLinks(getSellBrandModelLinks(category, brand, paged.products), paged.showingAll)
-      : getSellBrandModelLinks(category, brand, paged.products);
+  const seedLinks = mobileModelLinks(category, brand);
+  const modelLinks = seedLinks.length
+    ? resolveSeedModelLinks(seedLinks, getSellBrandModelLinks(category, brand, paged.products), paged.showingAll)
+    : getSellBrandModelLinks(category, brand, paged.products);
 
   return {
     ...paged,
@@ -504,10 +522,8 @@ export async function getSellBrandCatalogAsync(
   const brandMeta = await fetchBrandMetaFromShopify(category, brand);
 
   if (fromShopify?.products.length) {
-    const modelLinks =
-      category === "mobile" && brand === "samsung"
-        ? samsungModelLinks
-        : getSellBrandModelLinks(category, brand, fromShopify.products);
+    const seedLinks = mobileModelLinks(category, brand);
+    const modelLinks = seedLinks.length ? seedLinks : getSellBrandModelLinks(category, brand, fromShopify.products);
 
     return {
       products: fromShopify.products,
@@ -541,9 +557,8 @@ export async function getSellBrandProductsAsync(category: string, brand: string)
 }
 
 export function getSellBrandModelLinks(category: string, brand: string, products: CatalogProduct[]): ModelFilterLink[] {
-  if (category === "mobile" && brand === "samsung") {
-    return samsungModelLinks;
-  }
+  const seedLinks = mobileModelLinks(category, brand);
+  if (seedLinks.length) return seedLinks;
 
   return products.map((product) => ({
     label: `Trade In Your ${product.name}`,
@@ -580,9 +595,8 @@ export function getSellBrandDefaultPerPage(category: string, brand: string): num
 }
 
 export function getSellBrandTotalProducts(category: string, brand: string, visibleCount: number): number {
-  if (category === "mobile" && brand === "samsung" && samsungMobileData.totalProducts) {
-    return samsungMobileData.totalProducts;
-  }
+  const seed = category === "mobile" ? MOBILE_SEED[brand] : undefined;
+  if (seed?.total) return seed.total;
   return sellBrandCatalogMeta[category]?.[brand]?.totalProducts ?? visibleCount;
 }
 
@@ -608,7 +622,7 @@ export function getSellProduct(slug: string): SellProductDetail | undefined {
     })),
     ...Object.values(sellCategories).flatMap((c) => c.products),
     ...Object.values(sellBrandProducts).flatMap((brands) => Object.values(brands).flat()),
-    ...samsungMobileProducts,
+    ...Object.values(MOBILE_SEED).flatMap((s) => s.products),
   ];
   return allProducts.find((p) => p.href === `/sell-my/${normalized}` || p.href.endsWith(`/${normalized}`));
 }
@@ -628,9 +642,10 @@ export function getSellProductBreadcrumbs(product: SellProductDetail): Breadcrum
     });
   }
 
+  const seedLinks = product.categorySlug === "mobile" && product.brandSlug ? MOBILE_SEED[product.brandSlug]?.modelLinks : undefined;
   const familyLink =
-    product.categorySlug === "mobile" && product.brandSlug === "samsung"
-      ? resolveProductFamilyLink(product, samsungModelLinks)
+    seedLinks?.length
+      ? resolveProductFamilyLink(product, seedLinks)
       : product.familyLabel && product.familyHref
         ? { label: product.familyLabel, href: product.familyHref }
         : undefined;

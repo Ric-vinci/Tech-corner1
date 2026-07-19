@@ -1,5 +1,6 @@
 import SellBrandFamilyPage from "@/components/pages/SellBrandFamilyPage";
 import samsungMobileData from "@/data/generated/samsung-mobile.json";
+import appleMobileData from "@/data/generated/apple-mobile.json";
 import type { Metadata } from "next";
 
 type Props = {
@@ -7,7 +8,11 @@ type Props = {
 };
 
 export function generateStaticParams() {
-  return (samsungMobileData.modelLinks as { href: string }[]).map((link) => {
+  const links = [
+    ...(samsungMobileData.modelLinks as { href: string }[]),
+    ...((appleMobileData.modelLinks ?? []) as { href: string }[]),
+  ];
+  return links.map((link) => {
     const parts = link.href.split("/");
     return {
       brand: parts[parts.length - 2] ?? "samsung",
