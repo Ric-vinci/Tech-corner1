@@ -1,0 +1,127 @@
+{
+  "totalProducts": 10,
+  "products": [
+    {
+      "slug": "honor-honor-10-64gb.html",
+      "name": "Honor Honor 10 64GB",
+      "price": "Get up to £40.00",
+      "href": "/sell-my/honor-honor-10-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/huawei-honor-10-0-front_1.jpg"
+    },
+    {
+      "slug": "honor-honor-10-128gb.html",
+      "name": "Honor Honor 10 128GB",
+      "price": "Get up to £40.00",
+      "href": "/sell-my/honor-honor-10-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/huawei-honor-10-0-front.jpg"
+    },
+    {
+      "slug": "honor-honor-20-64gb.html",
+      "name": "Honor Honor 20 64GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/honor-honor-20-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/Honor_20_1.jpg"
+    },
+    {
+      "slug": "honor-honor-20-lite-128gb.html",
+      "name": "Honor Honor 20 Lite 128GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/honor-honor-20-lite-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/71qHYKz80GL._SY355__1.jpg"
+    },
+    {
+      "slug": "honor-honor-8-32gb.html",
+      "name": "Honor Honor 8 32GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/honor-honor-8-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/item_XL_11489398_16243730_1.jpg"
+    },
+    {
+      "slug": "honor-honor-8x-jsn-l21-64gb.html",
+      "name": "Honor Honor 8X - JSN-L21 64GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/honor-honor-8x-jsn-l21-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/Honor_8X_64GB_1.jpg"
+    },
+    {
+      "slug": "honor-honor-9x-64gb.html",
+      "name": "Honor Honor 9X 64GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/honor-honor-9x-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/Honor_9x_64GB_1.jpg"
+    },
+    {
+      "slug": "honor-honor-view-10-64gb.html",
+      "name": "Honor Honor View 10 64GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/honor-honor-view-10-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/714R3Tn2nML._SL1500__1.jpg"
+    },
+    {
+      "slug": "honor-honor-view-20-128gb.html",
+      "name": "Honor Honor View 20 128GB",
+      "price": "Get up to £10.00",
+      "href": "/sell-my/honor-honor-view-20-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/honor-view-20_2.jpg"
+    },
+    {
+      "slug": "honor-honor-view-20-256gb.html",
+      "name": "Honor Honor View 20 256GB",
+      "price": "Get up to £10.00",
+      "href": "/sell-my/honor-honor-view-20-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/honor/honor-view-20.jpg"
+    }
+  ],
+  "modelLinks": [
+    {
+      "slug": "honor-10",
+      "label": "Trade In Your Honor 10",
+      "href": "/sell-my/mobile/honor/honor-10",
+      "count": 1
+    },
+    {
+      "slug": "honor-20",
+      "label": "Trade In Your Honor 20",
+      "href": "/sell-my/mobile/honor/honor-20",
+      "count": 1
+    },
+    {
+      "slug": "honor-lite",
+      "label": "Trade In Your Honor 20 Lite",
+      "href": "/sell-my/mobile/honor/honor-lite",
+      "count": 1
+    },
+    {
+      "slug": "honor-8",
+      "label": "Trade In Your Honor 8",
+      "href": "/sell-my/mobile/honor/honor-8",
+      "count": 1
+    },
+    {
+      "slug": "honorl-21",
+      "label": "Trade In Your Honor 8x JSN L21",
+      "href": "/sell-my/mobile/honor/honorl-21",
+      "count": 1
+    },
+    {
+      "slug": "honor-9x",
+      "label": "Trade In Your Honor 9x",
+      "href": "/sell-my/mobile/honor/honor-9x",
+      "count": 1
+    },
+    {
+      "slug": "honor-view-10",
+      "label": "Trade In Your Honor View 10",
+      "href": "/sell-my/mobile/honor/honor-view-10",
+      "count": 1
+    },
+    {
+      "slug": "honor-view-20",
+      "label": "Trade In Your Honor View 20",
+      "href": "/sell-my/mobile/honor/honor-view-20",
+      "count": 1
+    }
+  ],
+  "source": "wapple_html/sell/mobile/honor/500",
+  "importedAt": "2026-07-20"
+}

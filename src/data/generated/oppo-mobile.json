@@ -1,0 +1,15 @@
+{
+  "totalProducts": 1,
+  "products": [
+    {
+      "slug": "oppo-find-n2-fold-256gb.html",
+      "name": "Oppo Find N2 Fold 256GB",
+      "price": "Get up to £230.00",
+      "href": "/sell-my/oppo-find-n2-fold-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/oppo/Find_N2_Fold.jpg"
+    }
+  ],
+  "modelLinks": [],
+  "source": "wapple_html/sell/mobile/oppo/500",
+  "importedAt": "2026-07-20"
+}

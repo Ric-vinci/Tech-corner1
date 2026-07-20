@@ -4,6 +4,8 @@ import samsungMobileData from "./generated/samsung-mobile.json";
 import appleMobileData from "./generated/apple-mobile.json";
 import googleMobileData from "./generated/google-mobile.json";
 import huaweiMobileData from "./generated/huawei-mobile.json";
+import honorMobileData from "./generated/honor-mobile.json";
+import oppoMobileData from "./generated/oppo-mobile.json";
 import { fetchBrandSellDetailsFromShopify, fetchSellProductFromShopify } from "@/lib/shopify/catalog";
 import { fetchBrandMetaFromShopify, fetchSellCategoryFromShopify } from "@/lib/shopify/collections";
 import { fetchBrandSellPageFromShopify } from "@/lib/shopify/catalog";
@@ -105,6 +107,17 @@ const MOBILE_SEED: Record<string, { products: SellProductDetail[]; modelLinks: M
     products: mapMobileSeed(huaweiMobileData as typeof samsungMobileData, "huawei", "Huawei"),
     modelLinks: (huaweiMobileData.modelLinks ?? []) as ModelFilterLink[],
     total: huaweiMobileData.totalProducts,
+  },
+  honor: {
+    products: mapMobileSeed(honorMobileData as typeof samsungMobileData, "honor", "Honor"),
+    modelLinks: (honorMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: honorMobileData.totalProducts,
+  },
+  oppo: {
+    // `as unknown` first: Oppo has no sidebar links, so modelLinks infers never[].
+    products: mapMobileSeed(oppoMobileData as unknown as typeof samsungMobileData, "oppo", "Oppo"),
+    modelLinks: (oppoMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: oppoMobileData.totalProducts,
   },
 };
 

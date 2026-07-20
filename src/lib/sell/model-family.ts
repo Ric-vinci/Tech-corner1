@@ -10,16 +10,38 @@ export function familySlugFromHref(href: string): string {
 
 const BRAND_PREFIX = /^(apple|samsung|google|huawei|oneplus|sony|nokia|motorola|xiaomi|oppo|realme|honor|nothing|lg|htc|zte|blackberry|redmi)[\s-]+/i;
 
-/** Product's model slug, brand-agnostic: "Apple iPhone 8 256GB" → "iphone-8". */
-export function productModelSlug(name: string): string {
-  return name
-    .replace(/\s*-\s*[A-Za-z0-9()/.\- ]+?\s+\d+\s*(GB|TB)\s*$/i, "") // "- A226B 64GB"
-    .replace(/\s+\d+(\.\d+)?\s*(GB|TB)\s*$/i, "") // "256GB"
-    .replace(BRAND_PREFIX, "")
+/** Some reference names are double-branded ("Honor Honor 10 64GB"). */
+function stripBrand(value: string): string {
+  let out = value.trim();
+  while (BRAND_PREFIX.test(out)) out = out.replace(BRAND_PREFIX, "").trim();
+  return out;
+}
+
+const slugify = (value: string) =>
+  value
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+
+/** Product's model slug, brand-agnostic: "Apple iPhone 8 256GB" → "iphone-8". */
+export function productModelSlug(name: string): string {
+  return slugify(
+    stripBrand(
+      name
+        .replace(/\s*-\s*[A-Za-z0-9()/.\- ]+?\s+\d+\s*(GB|TB)\s*$/i, "") // "- A226B 64GB"
+        .replace(/\s+\d+(\.\d+)?\s*(GB|TB)\s*$/i, ""), // "256GB"
+    ),
+  );
+}
+
+/**
+ * Like productModelSlug but keeps the model number: "Honor Honor 8X - JSN-L21
+ * 64GB" → "8x-jsn-l21". Several sidebar labels include the model number, so the
+ * suffix-stripped slug alone can't match them.
+ */
+function productModelSlugWithCode(name: string): string {
+  return slugify(stripBrand(name.replace(/\s+\d+(\.\d+)?\s*(GB|TB)\s*$/i, "")));
 }
 
 export function productMatchesFamily(product: SellProductDetail, familySlug: string): boolean {
@@ -35,12 +57,26 @@ export function productMatchesFamily(product: SellProductDetail, familySlug: str
   // Compare with separators stripped too, since the reference slugs merge digits
   // inconsistently ("pixel2" vs "pixel-2", "pixel-3xl" vs "pixel-3-xl").
   const compact = (s: string) => s.replace(/[^a-z0-9]/gi, "").toLowerCase();
-  const modelSlug = productModelSlug(product.name);
-  const targetNoBrand = target.replace(BRAND_PREFIX, "");
-  if (modelSlug) {
+  const targetNoBrand = stripBrand(target.replace(/-/g, " ")).replace(/\s+/g, "-");
+  const modelSlugs = [productModelSlug(product.name), productModelSlugWithCode(product.name)];
+  for (const modelSlug of modelSlugs) {
+    if (!modelSlug) continue;
     if (modelSlug === target || modelSlug === targetNoBrand) return true;
     if (compact(modelSlug) === compact(target) || compact(modelSlug) === compact(targetNoBrand)) return true;
   }
+
+  // Last resort: drop tokens the reference is inconsistent about — the series word
+  // ("galaxy"), the "SM-" model-code prefix, and a trailing network suffix. This is
+  // what makes "galaxy-note-20-ultra" reach "Galaxy Note 20 Ultra 4G - N985F".
+  const loose = (s: string) =>
+    compact(
+      s
+        .replace(/\bgalaxy\b/gi, "")
+        .replace(/\bsm[-\s]/gi, "")
+        .replace(/[-\s](4g|5g)\b/gi, ""),
+    );
+  const looseTarget = loose(targetNoBrand);
+  if (looseTarget && modelSlugs.some((slug) => slug && loose(slug) === looseTarget)) return true;
 
   const handle = product.href.replace("/sell-my/", "").replace(/\.html$/, "");
   const handleBase = handle.replace(/-\d+(\.\d+)?(gb|tb)$/i, "");
