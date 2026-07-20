@@ -3,13 +3,14 @@ import { sellTradeIns } from "./content";
 import samsungMobileData from "./generated/samsung-mobile.json";
 import appleMobileData from "./generated/apple-mobile.json";
 import googleMobileData from "./generated/google-mobile.json";
+import huaweiMobileData from "./generated/huawei-mobile.json";
 import { fetchBrandSellDetailsFromShopify, fetchSellProductFromShopify } from "@/lib/shopify/catalog";
 import { fetchBrandMetaFromShopify, fetchSellCategoryFromShopify } from "@/lib/shopify/collections";
 import { fetchBrandSellPageFromShopify } from "@/lib/shopify/catalog";
 import { allowStaticCatalogFallback, isShopifyConfigured, resolveImageUrl } from "@/lib/shopify/config";
 import { MOBILE_BRANDS, getMobileBrandMeta } from "./mobile-brands";
 import type { SellCatalogParams } from "@/lib/sell/catalog-params";
-import { findModelFamily, productMatchesFamily, resolveProductFamilyLink } from "@/lib/sell/model-family";
+import { findModelFamily, productMatchesFamilyLink, resolveProductFamilyLink } from "@/lib/sell/model-family";
 
 export { isShopifyConfigured };
 
@@ -99,6 +100,11 @@ const MOBILE_SEED: Record<string, { products: SellProductDetail[]; modelLinks: M
     products: mapMobileSeed(googleMobileData as typeof samsungMobileData, "google", "Google"),
     modelLinks: (googleMobileData.modelLinks ?? []) as ModelFilterLink[],
     total: googleMobileData.totalProducts,
+  },
+  huawei: {
+    products: mapMobileSeed(huaweiMobileData as typeof samsungMobileData, "huawei", "Huawei"),
+    modelLinks: (huaweiMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: huaweiMobileData.totalProducts,
   },
 };
 
@@ -402,7 +408,7 @@ export function getSellBrandFamilyPage(
   if (!family) return null;
 
   const products = getSellBrandProducts(category, brand).filter((product) =>
-    productMatchesFamily(product as SellProductDetail, familySlug),
+    productMatchesFamilyLink(product as SellProductDetail, family),
   );
 
   if (!products.length) return null;
@@ -427,7 +433,7 @@ export async function getSellBrandFamilyPageAsync(
 
   const fromShopify = await fetchBrandSellDetailsFromShopify(category, brand);
   if (fromShopify?.products.length) {
-    const products = fromShopify.products.filter((product) => productMatchesFamily(product, familySlug));
+    const products = fromShopify.products.filter((product) => productMatchesFamilyLink(product, family));
     if (products.length) {
       return {
         familyLabel: family.label,

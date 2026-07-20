@@ -1,0 +1,431 @@
+{
+  "totalProducts": 38,
+  "products": [
+    {
+      "slug": "huawei-mate-10-pro-64gb.html",
+      "name": "Huawei Mate 10 Pro 64GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-mate-10-pro-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Mate_10_pro_1.png"
+    },
+    {
+      "slug": "huawei-mate-20-128gb.html",
+      "name": "Huawei Mate 20 128GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/huawei-mate-20-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/u_10183985_1.jpg"
+    },
+    {
+      "slug": "huawei-mate-20-lite-sne-lx1-64gb.html",
+      "name": "Huawei Mate 20 Lite - SNE-LX1 64GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/huawei-mate-20-lite-sne-lx1-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/mate-20-liteBLUE_1.png"
+    },
+    {
+      "slug": "huawei-mate-20-pro-128gb.html",
+      "name": "Huawei Mate 20 Pro 128GB",
+      "price": "Get up to £40.00",
+      "href": "/sell-my/huawei-mate-20-pro-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/mate-20-proTWILIGHT_2.png"
+    },
+    {
+      "slug": "huawei-mate-20-pro-256gb.html",
+      "name": "Huawei Mate 20 Pro 256GB",
+      "price": "Get up to £40.00",
+      "href": "/sell-my/huawei-mate-20-pro-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/mate-20-proTWILIGHT.png"
+    },
+    {
+      "slug": "huawei-mate-20-x-5g-128gb.html",
+      "name": "Huawei Mate 20 X 5G 128GB",
+      "price": "Get up to £90.00",
+      "href": "/sell-my/huawei-mate-20-x-5g-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei_mate_20_X_5G_1.jpg"
+    },
+    {
+      "slug": "huawei-mate-9-64gb.html",
+      "name": "Huawei Mate 9 64GB",
+      "price": "Get up to £3.00",
+      "href": "/sell-my/huawei-mate-9-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-mate-9_350_x_184.jpg"
+    },
+    {
+      "slug": "huawei-nexus-6p-h1512-32gb.html",
+      "name": "Huawei Nexus 6P - H1512 32GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-nexus-6p-h1512-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Nexus_6P_1.jpg"
+    },
+    {
+      "slug": "huawei-nexus-6p-h1512-64gb.html",
+      "name": "Huawei Nexus 6P - H1512 64GB",
+      "price": "Get up to £15.00",
+      "href": "/sell-my/huawei-nexus-6p-h1512-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Nexus_6P_2.jpg"
+    },
+    {
+      "slug": "huawei-nexus-6p-h1512-128gb.html",
+      "name": "Huawei Nexus 6P - H1512 128GB",
+      "price": "Get up to £15.00",
+      "href": "/sell-my/huawei-nexus-6p-h1512-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Nexus_6P.jpg"
+    },
+    {
+      "slug": "huawei-nova-32gb.html",
+      "name": "Huawei Nova 32GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-nova-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-nova_1.jpg"
+    },
+    {
+      "slug": "huawei-p10-32gb.html",
+      "name": "Huawei P10 32GB",
+      "price": "Get up to £10.00",
+      "href": "/sell-my/huawei-p10-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/vfcon079562_2.jpg"
+    },
+    {
+      "slug": "huawei-p10-lite-32gb.html",
+      "name": "Huawei P10 Lite 32GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-p10-lite-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei-P10-Lite_1.jpg"
+    },
+    {
+      "slug": "huawei-p10-plus-64gb.html",
+      "name": "Huawei P10 Plus 64GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/huawei-p10-plus-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/vfcon079562.jpg"
+    },
+    {
+      "slug": "huawei-p20-128gb.html",
+      "name": "Huawei P20 128GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/huawei-p20-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei-p20.jpg"
+    },
+    {
+      "slug": "huawei-p20-lite-32gb.html",
+      "name": "Huawei P20 Lite 32GB",
+      "price": "Get up to £15.00",
+      "href": "/sell-my/huawei-p20-lite-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei-p20-lite_1.jpg"
+    },
+    {
+      "slug": "huawei-p20-pro-128gb.html",
+      "name": "Huawei P20 Pro 128GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/huawei-p20-pro-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p20-pro-front.jpg"
+    },
+    {
+      "slug": "huawei-p30-128gb.html",
+      "name": "Huawei P30 128GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/huawei-p30-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/P30_Aurora_Front.png"
+    },
+    {
+      "slug": "huawei-p30-lite-128gb.html",
+      "name": "Huawei P30 Lite 128GB",
+      "price": "Get up to £30.00",
+      "href": "/sell-my/huawei-p30-lite-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/1350736425_smartphones-huawei-p30-lite-51093nnn_1.jpg"
+    },
+    {
+      "slug": "huawei-p30-pro-128gb.html",
+      "name": "Huawei P30 Pro 128GB",
+      "price": "Get up to £90.00",
+      "href": "/sell-my/huawei-p30-pro-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p30-vogue-aurora-78d4ce-img1Big_3.jpg"
+    },
+    {
+      "slug": "huawei-p30-pro-256gb.html",
+      "name": "Huawei P30 Pro 256GB",
+      "price": "Get up to £90.00",
+      "href": "/sell-my/huawei-p30-pro-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p30-vogue-aurora-78d4ce-img1Big.jpg"
+    },
+    {
+      "slug": "huawei-p30-pro-512gb.html",
+      "name": "Huawei P30 Pro 512GB",
+      "price": "Get up to £100.00",
+      "href": "/sell-my/huawei-p30-pro-512gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p30-vogue-aurora-78d4ce-img1Big_1.jpg"
+    },
+    {
+      "slug": "huawei-p40-128gb.html",
+      "name": "Huawei P40 128GB",
+      "price": "Get up to £50.00",
+      "href": "/sell-my/huawei-p40-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-01_webcrop.jpg"
+    },
+    {
+      "slug": "huawei-p40-256gb.html",
+      "name": "Huawei P40 256GB",
+      "price": "Get up to £50.00",
+      "href": "/sell-my/huawei-p40-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-01_webcrop_1.jpg"
+    },
+    {
+      "slug": "huawei-p40-lite-128gb.html",
+      "name": "Huawei P40 Lite 128GB",
+      "price": "Get up to £20.00",
+      "href": "/sell-my/huawei-p40-lite-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-lite-_black_webcrop.jpg"
+    },
+    {
+      "slug": "huawei-p40-pro-128gb.html",
+      "name": "Huawei P40 Pro 128GB",
+      "price": "Get up to £70.00",
+      "href": "/sell-my/huawei-p40-pro-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-pro_peach_webcrop.jpg"
+    },
+    {
+      "slug": "huawei-p40-pro-256gb.html",
+      "name": "Huawei P40 Pro 256GB",
+      "price": "Get up to £70.00",
+      "href": "/sell-my/huawei-p40-pro-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-pro_peach_webcrop_1.jpg"
+    },
+    {
+      "slug": "huawei-p40-pro-512gb.html",
+      "name": "Huawei P40 Pro 512GB",
+      "price": "Get up to £70.00",
+      "href": "/sell-my/huawei-p40-pro-512gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-pro_peach_webcrop_2.jpg"
+    },
+    {
+      "slug": "huawei-p40-pro-plus-256gb.html",
+      "name": "Huawei P40 Pro Plus 256GB",
+      "price": "Get up to £80.00",
+      "href": "/sell-my/huawei-p40-pro-plus-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-pro-plus-black_webcrop.jpg"
+    },
+    {
+      "slug": "huawei-p40-pro-plus-512gb.html",
+      "name": "Huawei P40 Pro Plus 512GB",
+      "price": "Get up to £80.00",
+      "href": "/sell-my/huawei-p40-pro-plus-512gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/huawei-p40-pro-plus-black_webcrop_1.jpg"
+    },
+    {
+      "slug": "huawei-p8-16gb.html",
+      "name": "Huawei P8 16GB",
+      "price": "Get up to £12.00",
+      "href": "/sell-my/huawei-p8-16gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/P8_1.jpg"
+    },
+    {
+      "slug": "huawei-p8-lite-2017-16gb.html",
+      "name": "Huawei P8 Lite (2017) 16GB",
+      "price": "Get up to £10.00",
+      "href": "/sell-my/huawei-p8-lite-2017-16gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/P8_Lite.jpg"
+    },
+    {
+      "slug": "huawei-mate-30-pro-128gb.html",
+      "name": "Huawei Mate 30 Pro 128GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-mate-30-pro-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei_mate_30_pro_128gb.jpg"
+    },
+    {
+      "slug": "huawei-mate-30-pro-256gb.html",
+      "name": "Huawei Mate 30 Pro 256GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-mate-30-pro-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei_mate_30_pro_128gb_3.jpg"
+    },
+    {
+      "slug": "huawei-mate-30-pro-5g-128gb.html",
+      "name": "Huawei Mate 30 Pro 5G 128GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-mate-30-pro-5g-128gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei_Mate_30_pro_5G.jpg"
+    },
+    {
+      "slug": "huawei-mate-30-pro-5g-256gb.html",
+      "name": "Huawei Mate 30 Pro 5G 256GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-mate-30-pro-5g-256gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/Huawei_Mate_30_pro_5G_1.jpg"
+    },
+    {
+      "slug": "huawei-p-smart-fig-lx1-32gb.html",
+      "name": "Huawei P Smart - FIG-LX1 32GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-p-smart-fig-lx1-32gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/v2-89791_medium_2.jpg"
+    },
+    {
+      "slug": "huawei-p-smart-fig-lx1-64gb.html",
+      "name": "Huawei P Smart - FIG-LX1 64GB",
+      "price": "Get up to £5.00",
+      "href": "/sell-my/huawei-p-smart-fig-lx1-64gb.html",
+      "image": "https://utlznzwntmztwkklbugo.supabase.co/storage/v1/object/public/product-images/sell/huawei/v2-89791_medium.jpg"
+    }
+  ],
+  "modelLinks": [
+    {
+      "slug": "huawei-mate-10-pro",
+      "label": "Trade In Your Huawei Mate 10 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-mate-10-pro",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-20",
+      "label": "Trade In Your  Huawei Mate 20",
+      "href": "/sell-my/mobile/huawei/huawei-mate-20",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-20-lite",
+      "label": "Trade In Your  Huawei Mate 20 Lite",
+      "href": "/sell-my/mobile/huawei/huawei-mate-20-lite",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-20-pro",
+      "label": "Trade In Your  Huawei Mate 20 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-mate-20-pro",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-9",
+      "label": "Trade In Your  Huawei Mate 9",
+      "href": "/sell-my/mobile/huawei/huawei-mate-9",
+      "count": 1
+    },
+    {
+      "slug": "mate-20-x-5g",
+      "label": "Trade In Your Huawei Mate 20 X 5G",
+      "href": "/sell-my/mobile/huawei/mate-20-x-5g",
+      "count": 1
+    },
+    {
+      "slug": "huawei-nexus-6p",
+      "label": "Trade In Your  Huawei Nexus 6P",
+      "href": "/sell-my/mobile/huawei/huawei-nexus-6p",
+      "count": 1
+    },
+    {
+      "slug": "huawei-nova",
+      "label": "Trade In Your  Huawei Nova",
+      "href": "/sell-my/mobile/huawei/huawei-nova",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p10",
+      "label": "Trade In Your  Huawei P10",
+      "href": "/sell-my/mobile/huawei/huawei-p10",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p10-lite",
+      "label": "Trade In Your  Huawei P10 Lite",
+      "href": "/sell-my/mobile/huawei/huawei-p10-lite",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p10-plus",
+      "label": "Trade In Your  Huawei P10 Plus",
+      "href": "/sell-my/mobile/huawei/huawei-p10-plus",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p20",
+      "label": "Trade In Your  Huawei P20",
+      "href": "/sell-my/mobile/huawei/huawei-p20",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p20-lite",
+      "label": "Trade In Your  Huawei P20 Lite",
+      "href": "/sell-my/mobile/huawei/huawei-p20-lite",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p20-plus",
+      "label": "Trade In Your  Huawei P20 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-p20-plus",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p30",
+      "label": "Trade In Your  Huawei P30",
+      "href": "/sell-my/mobile/huawei/huawei-p30",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p30-lite",
+      "label": "Trade In Your Huawei P30 Lite",
+      "href": "/sell-my/mobile/huawei/huawei-p30-lite",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p30-plus",
+      "label": "Trade In Your Huawei P30 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-p30-plus",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p40",
+      "label": "Trade In Your Huawei P40",
+      "href": "/sell-my/mobile/huawei/huawei-p40",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p40-lite",
+      "label": "Trade In Your  Huawei P40 Lite",
+      "href": "/sell-my/mobile/huawei/huawei-p40-lite",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p40-plus",
+      "label": "Trade In Your Huawei P40 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-p40-plus",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p40-pro-plus",
+      "label": "Trade In Your  Huawei P40 Pro Plus",
+      "href": "/sell-my/mobile/huawei/huawei-p40-pro-plus",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p8",
+      "label": "Trade In Your Huawei P8",
+      "href": "/sell-my/mobile/huawei/huawei-p8",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p8-lite-2017",
+      "label": "Trade In Your Huawei P8 Lite (2017)",
+      "href": "/sell-my/mobile/huawei/huawei-p8-lite-2017",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-30-pro",
+      "label": "Trade In Your Huawei Mate 30 Pro",
+      "href": "/sell-my/mobile/huawei/huawei-mate-30-pro",
+      "count": 1
+    },
+    {
+      "slug": "huawei-mate-30-pro-5g",
+      "label": "Trade In Your Huawei Mate 30 Pro 5G",
+      "href": "/sell-my/mobile/huawei/huawei-mate-30-pro-5g",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p-smart-fig-lx1",
+      "label": "Trade In Your Huawei P Smart - FIG-LX1",
+      "href": "/sell-my/mobile/huawei/huawei-p-smart-fig-lx1",
+      "count": 1
+    }
+  ],
+  "source": "wapple_html/sell/mobile/huawei/500",
+  "importedAt": "2026-07-19"
+}

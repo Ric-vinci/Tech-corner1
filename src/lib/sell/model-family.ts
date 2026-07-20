@@ -11,7 +11,7 @@ export function familySlugFromHref(href: string): string {
 const BRAND_PREFIX = /^(apple|samsung|google|huawei|oneplus|sony|nokia|motorola|xiaomi|oppo|realme|honor|nothing|lg|htc|zte|blackberry|redmi)[\s-]+/i;
 
 /** Product's model slug, brand-agnostic: "Apple iPhone 8 256GB" → "iphone-8". */
-function productModelSlug(name: string): string {
+export function productModelSlug(name: string): string {
   return name
     .replace(/\s*-\s*[A-Za-z0-9()/.\- ]+?\s+\d+\s*(GB|TB)\s*$/i, "") // "- A226B 64GB"
     .replace(/\s+\d+(\.\d+)?\s*(GB|TB)\s*$/i, "") // "256GB"
@@ -48,6 +48,22 @@ export function productMatchesFamily(product: SellProductDetail, familySlug: str
   if (handle.startsWith(`${target}-`)) return true;
 
   return false;
+}
+
+/**
+ * Match against a sidebar link, falling back to its label when the slug finds
+ * nothing. Some reference slugs disagree with their own label — Huawei's
+ * "huawei-p20-plus" is labelled "Huawei P20 Pro", and the product is a P20 Pro
+ * — so the label is the more reliable identifier of the two.
+ */
+export function productMatchesFamilyLink(
+  product: SellProductDetail,
+  link: { href: string; label: string },
+): boolean {
+  if (productMatchesFamily(product, familySlugFromHref(link.href))) return true;
+
+  const labelSlug = productModelSlug(link.label.replace(/^\s*(?:trade in|sell)\s+your\s+/i, ""));
+  return labelSlug.length > 0 && productMatchesFamily(product, labelSlug);
 }
 
 export function findModelFamily(
