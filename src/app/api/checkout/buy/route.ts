@@ -5,7 +5,7 @@ import { adminRequest, isShopifyAdminConfigured } from "@/lib/shopify/admin-clie
 import { normalizeShippingAddress, validateShippingAddress } from "@/lib/checkout/shipping-address";
 import { createPaypalOrder, isPaypalConfigured } from "@/lib/buy-payment/paypal";
 import { redeemStoreCredit, redeemByCode } from "@/lib/buy-payment/store-credit";
-import { markRefurbUnitsSold } from "@/lib/shopify/admin-inventory";
+import { takeStockOnce } from "@/lib/buy-payment/stock";
 import type { BuyCartItem } from "@/lib/cart/buy-cart";
 
 type Method = "bank" | "paypal" | "gift_card";
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
       })
       .eq("id", data.id);
 
-    await markRefurbUnitsSold(soldProductIds); // paid in full — remove from stock
+    await takeStockOnce(data.id, soldProductIds); // paid in full — remove from stock
     return NextResponse.json({ orderId: data.id, method, paid: true });
   }
 
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
   if (method === "bank") {
     const { data, error } = await insertOrder(supabase, { ...baseRow, status: "awaiting_payment", payment_status: "pending" });
     if (error || !data) return schemaError(error);
-    await markRefurbUnitsSold(soldProductIds); // reserve the unit so it can't be double-sold
+    await takeStockOnce(data.id, soldProductIds); // reserve the unit so it can't be double-sold
     return NextResponse.json({ orderId: data.id, method });
   }
 
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
   if (!isPaypalConfigured()) return NextResponse.json({ error: "PayPal is not configured." }, { status: 400 });
   const { data, error } = await insertOrder(supabase, { ...baseRow, status: "pending_payment", payment_status: "pending" });
   if (error || !data) return schemaError(error);
-  await markRefurbUnitsSold(soldProductIds); // reserve during the approval window
+  await takeStockOnce(data.id, soldProductIds); // reserve during the approval window
 
   try {
     const origin = new URL(request.url).origin;

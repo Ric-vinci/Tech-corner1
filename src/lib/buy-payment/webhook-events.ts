@@ -1,7 +1,8 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { capturePaypalOrder } from "@/lib/buy-payment/paypal";
-import { markRefurbUnitsSold, restoreRefurbStock } from "@/lib/shopify/admin-inventory";
+import { captureBuyOrder } from "@/lib/buy-payment/capture";
+import { releaseStockOnce, takeStockOnce } from "@/lib/buy-payment/stock";
+import { unitsForItems } from "@/lib/buy-payment/units";
 
 /**
  * PayPal webhook handling for BUY orders (money in).
@@ -55,26 +56,7 @@ async function findOrder(resource: Record<string, any>): Promise<BuyOrder | null
 }
 
 /** The devices on an order, so stock can be released or re-taken. */
-async function unitsFor(order: BuyOrder): Promise<{ productId: string; qty: number }[]> {
-  const items = order.items ?? [];
-  const variantIds = items.map((i) => i.variantId).filter((v): v is string => Boolean(v));
-  if (!variantIds.length) return [];
-  try {
-    const { adminRequest } = await import("@/lib/shopify/admin-client");
-    const data = await adminRequest<{ nodes: ({ id: string; product: { id: string } | null } | null)[] }>(
-      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id product { id } } } }`,
-      { ids: variantIds },
-      { noStore: true },
-    );
-    const byVariant = new Map<string, string>();
-    for (const n of data.nodes) if (n?.id && n.product?.id) byVariant.set(n.id, n.product.id);
-    return items
-      .map((i) => ({ productId: i.variantId ? byVariant.get(i.variantId) ?? "" : "", qty: i.quantity }))
-      .filter((u) => u.productId);
-  } catch {
-    return [];
-  }
-}
+const unitsFor = (order: BuyOrder) => unitsForItems(order.items ?? []);
 
 export async function handleBuyOrderEvent(event: { event_type: string; resource?: Record<string, any> }) {
   const supabase = getSupabaseAdmin();
@@ -90,14 +72,9 @@ export async function handleBuyOrderEvent(event: { event_type: string; resource?
     const paypalOrderId = typeof resource.id === "string" ? resource.id : order.payment_reference;
     if (!paypalOrderId) return { ignored: "no paypal order id" };
 
-    const result = await capturePaypalOrder(paypalOrderId);
-    if (!result.captured) return { ignored: "not captured yet" };
-
-    await supabase
-      .from("buy_orders")
-      .update({ status: "paid", payment_status: "paid", payment_reference: result.captureId ?? paypalOrderId, paid_at: now, updated_at: now })
-      .eq("id", order.id);
-    await markRefurbUnitsSold(await unitsFor(order));
+    // Shared claim-then-capture: the browser return URL races this handler.
+    const result = await captureBuyOrder(order.id, paypalOrderId, await unitsFor(order));
+    if (!result.paid) return { ignored: result.reason ?? "not captured yet" };
     return { ok: true, captured: true };
   }
 
@@ -108,7 +85,9 @@ export async function handleBuyOrderEvent(event: { event_type: string; resource?
       .from("buy_orders")
       .update({ status: "paid", payment_status: "paid", payment_reference: resource.id ?? order.payment_reference, paid_at: now, updated_at: now })
       .eq("id", order.id);
-    await markRefurbUnitsSold(await unitsFor(order));
+    // Normally already taken when the order was created; take-once makes a
+    // repeat delivery of this webhook harmless rather than a second decrement.
+    await takeStockOnce(order.id, await unitsFor(order));
     return { ok: true, paid: true };
   }
 
@@ -122,7 +101,7 @@ export async function handleBuyOrderEvent(event: { event_type: string; resource?
       .from("buy_orders")
       .update({ status: refunded ? "refunded" : "cancelled", payment_status: nextStatus, updated_at: now })
       .eq("id", order.id);
-    await restoreRefurbStock(await unitsFor(order)); // device is ours again
+    await releaseStockOnce(order.id, await unitsFor(order)); // device is ours again
     return { ok: true, [nextStatus]: true };
   }
 

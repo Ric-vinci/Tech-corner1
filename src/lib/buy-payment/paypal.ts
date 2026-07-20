@@ -33,7 +33,13 @@ export async function createPaypalOrder(opts: {
   const token = await accessToken();
   const res = await fetch(`${apiBase()}/v2/checkout/orders`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      // Idempotency: keyed on our buy_order id, so a retried create returns the
+      // SAME PayPal order instead of a second one the customer could also pay.
+      "PayPal-Request-Id": `buy-order-${opts.referenceId}`,
+    },
     body: JSON.stringify({
       intent: "CAPTURE",
       purchase_units: [
@@ -58,14 +64,48 @@ export async function createPaypalOrder(opts: {
   return { paypalOrderId: json.id, approveUrl: approve.href };
 }
 
-/** Capture an approved PayPal order. Returns the capture id when COMPLETED. */
+/**
+ * Capture an approved PayPal order. Returns the capture id when COMPLETED.
+ *
+ * Idempotent in two layers, because the browser return URL and the webhook can
+ * both try to capture the same order at once:
+ *  - PayPal-Request-Id makes a replayed request return the original capture
+ *    rather than taking the money twice;
+ *  - if PayPal still reports ORDER_ALREADY_CAPTURED, we read the existing
+ *    capture back and report success, since the money HAS been taken.
+ */
 export async function capturePaypalOrder(paypalOrderId: string): Promise<{ captured: boolean; captureId: string | null }> {
   const token = await accessToken();
   const res = await fetch(`${apiBase()}/v2/checkout/orders/${paypalOrderId}/capture`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "PayPal-Request-Id": `capture-${paypalOrderId}`,
+    },
   });
   const json = await res.json();
+
+  if (!res.ok) {
+    const alreadyCaptured = JSON.stringify(json?.details ?? json ?? "").includes("ORDER_ALREADY_CAPTURED");
+    if (alreadyCaptured) return readCapture(paypalOrderId, token);
+    return { captured: false, captureId: null };
+  }
+
   const capture = json?.purchase_units?.[0]?.payments?.captures?.[0];
   return { captured: json.status === "COMPLETED", captureId: capture?.id ?? null };
+}
+
+/** Read an already-captured order back, so a duplicate capture still resolves. */
+async function readCapture(paypalOrderId: string, token: string): Promise<{ captured: boolean; captureId: string | null }> {
+  try {
+    const res = await fetch(`${apiBase()}/v2/checkout/orders/${paypalOrderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    const capture = json?.purchase_units?.[0]?.payments?.captures?.[0];
+    return { captured: capture?.status === "COMPLETED", captureId: capture?.id ?? null };
+  } catch {
+    return { captured: false, captureId: null };
+  }
 }

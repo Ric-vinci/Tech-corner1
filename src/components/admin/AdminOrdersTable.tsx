@@ -85,14 +85,73 @@ function Row({ order }: { order: BuyOrderRow }) {
   );
 }
 
+type Discrepancy = { orderId: string; kind: string; detail: string };
+
+/**
+ * Cross-checks paid/refunded orders against Shopify stock. Read-only — it
+ * reports mismatches for a human to look at, it never changes anything.
+ */
+function StockCheck() {
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState<{ checked: number; discrepancies: Discrepancy[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/orders/reconcile");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Check failed");
+      setReport(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Check failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="text-right">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="rounded-lg border border-grey-light bg-pure-white px-4 py-2 text-sm font-medium hover:bg-grey-lightest disabled:opacity-60"
+      >
+        {busy ? "Checking…" : "Check stock matches payments"}
+      </button>
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {report && !error && (
+        <div className="mt-2 max-w-sm text-xs">
+          {report.discrepancies.length === 0 ? (
+            <p className="text-green-700">All {report.checked} paid/refunded orders match stock.</p>
+          ) : (
+            <ul className="space-y-1 text-left text-red-600">
+              {report.discrepancies.map((d) => (
+                <li key={`${d.orderId}-${d.kind}`}>
+                  <span className="font-mono">{d.orderId.slice(0, 8)}</span> — {d.detail}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminOrdersTable({ orders, awaitingCount }: { orders: BuyOrderRow[]; awaitingCount: number }) {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">Orders</h1>
-        <p className="mt-1 text-sm text-grey-dark">
-          Refurbished-device purchases. {orders.length} total{awaitingCount ? ` · ${awaitingCount} awaiting bank payment` : ""}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight">Orders</h1>
+          <p className="mt-1 text-sm text-grey-dark">
+            Refurbished-device purchases. {orders.length} total{awaitingCount ? ` · ${awaitingCount} awaiting bank payment` : ""}.
+          </p>
+        </div>
+        <StockCheck />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-grey-light bg-pure-white">

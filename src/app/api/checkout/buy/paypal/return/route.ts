@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { capturePaypalOrder } from "@/lib/buy-payment/paypal";
+import { captureBuyOrder } from "@/lib/buy-payment/capture";
 
 /**
  * PayPal redirects the customer's browser here after approval:
@@ -31,19 +31,11 @@ export async function GET(request: Request) {
   if (order.payment_status === "paid") return NextResponse.redirect(`${origin}/buy-used/checkout/success?ref=${orderId}`);
 
   try {
-    const result = await capturePaypalOrder(paypalOrderId);
-    if (!result.captured) return fail("payment_not_completed");
+    const result = await captureBuyOrder(orderId, paypalOrderId);
 
-    await supabase
-      .from("buy_orders")
-      .update({
-        status: "paid",
-        payment_status: "paid",
-        payment_reference: result.captureId ?? paypalOrderId,
-        paid_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
+    // The webhook may be capturing this very moment. The money is in flight, so
+    // show success rather than an error — the webhook settles the order.
+    if (!result.paid && result.reason !== "capture_in_progress") return fail("payment_not_completed");
 
     return NextResponse.redirect(`${origin}/buy-used/checkout/success?ref=${orderId}`);
   } catch {
