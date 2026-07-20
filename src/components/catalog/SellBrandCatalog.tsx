@@ -44,6 +44,16 @@ export default function SellBrandCatalog({
     router.push(href);
   }
 
+  // Brands we hold no trade-in prices for (e.g. CAT) — the reference site shows
+  // this same message rather than a toolbar and an empty grid.
+  if (!products.length) {
+    return (
+      <div className="message info empty">
+        <div>We can&apos;t find products matching the selection.</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <SellCatalogToolbar

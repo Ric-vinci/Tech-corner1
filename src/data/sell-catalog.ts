@@ -6,6 +6,7 @@ import googleMobileData from "./generated/google-mobile.json";
 import huaweiMobileData from "./generated/huawei-mobile.json";
 import honorMobileData from "./generated/honor-mobile.json";
 import oppoMobileData from "./generated/oppo-mobile.json";
+import oneplusMobileData from "./generated/oneplus-mobile.json";
 import { fetchBrandSellDetailsFromShopify, fetchSellProductFromShopify } from "@/lib/shopify/catalog";
 import { fetchBrandMetaFromShopify, fetchSellCategoryFromShopify } from "@/lib/shopify/collections";
 import { fetchBrandSellPageFromShopify } from "@/lib/shopify/catalog";
@@ -118,6 +119,11 @@ const MOBILE_SEED: Record<string, { products: SellProductDetail[]; modelLinks: M
     products: mapMobileSeed(oppoMobileData as unknown as typeof samsungMobileData, "oppo", "Oppo"),
     modelLinks: (oppoMobileData.modelLinks ?? []) as ModelFilterLink[],
     total: oppoMobileData.totalProducts,
+  },
+  oneplus: {
+    products: mapMobileSeed(oneplusMobileData as typeof samsungMobileData, "oneplus", "OnePlus"),
+    modelLinks: (oneplusMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: oneplusMobileData.totalProducts,
   },
 };
 
@@ -345,15 +351,10 @@ export function getSellBrandProducts(category: string, brand: string): CatalogPr
   const specific = sellBrandProducts[category]?.[brand];
   if (specific?.length) return specific;
 
-  const label = getSellBrandLabel(brand);
-  return [
-    {
-      name: `${label} Device (select model)`,
-      image: "/images/MicrosoftTeams-image_5_.png",
-      price: "Get a quote",
-      href: `/sell-my/${brand}-device.html`,
-    },
-  ];
+  // No trade-in prices for this brand. Previously this returned a placeholder
+  // "<Brand> Device (select model)" card, but its href (/sell-my/<brand>-device.html)
+  // has no page — every click was a 404. Callers render an empty state instead.
+  return [];
 }
 
 export type SellBrandCatalogPage = {
