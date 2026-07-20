@@ -1,6 +1,7 @@
 import SellBrandFamilyPage from "@/components/pages/SellBrandFamilyPage";
 import samsungMobileData from "@/data/generated/samsung-mobile.json";
 import appleMobileData from "@/data/generated/apple-mobile.json";
+import googleMobileData from "@/data/generated/google-mobile.json";
 import type { Metadata } from "next";
 
 type Props = {
@@ -11,6 +12,7 @@ export function generateStaticParams() {
   const links = [
     ...(samsungMobileData.modelLinks as { href: string }[]),
     ...((appleMobileData.modelLinks ?? []) as { href: string }[]),
+    ...((googleMobileData.modelLinks ?? []) as { href: string }[]),
   ];
   return links.map((link) => {
     const parts = link.href.split("/");

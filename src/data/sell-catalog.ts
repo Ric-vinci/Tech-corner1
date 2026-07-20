@@ -2,6 +2,7 @@ import type { BrandItem, BreadcrumbItem, CatalogProduct, FilterGroup, ModelFilte
 import { sellTradeIns } from "./content";
 import samsungMobileData from "./generated/samsung-mobile.json";
 import appleMobileData from "./generated/apple-mobile.json";
+import googleMobileData from "./generated/google-mobile.json";
 import { fetchBrandSellDetailsFromShopify, fetchSellProductFromShopify } from "@/lib/shopify/catalog";
 import { fetchBrandMetaFromShopify, fetchSellCategoryFromShopify } from "@/lib/shopify/collections";
 import { fetchBrandSellPageFromShopify } from "@/lib/shopify/catalog";
@@ -93,6 +94,11 @@ const MOBILE_SEED: Record<string, { products: SellProductDetail[]; modelLinks: M
     products: mapMobileSeed(appleMobileData as typeof samsungMobileData, "apple", "Apple"),
     modelLinks: (appleMobileData.modelLinks ?? []) as ModelFilterLink[],
     total: appleMobileData.totalProducts,
+  },
+  google: {
+    products: mapMobileSeed(googleMobileData as typeof samsungMobileData, "google", "Google"),
+    modelLinks: (googleMobileData.modelLinks ?? []) as ModelFilterLink[],
+    total: googleMobileData.totalProducts,
   },
 };
 

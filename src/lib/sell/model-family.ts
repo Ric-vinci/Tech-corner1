@@ -32,8 +32,15 @@ export function productMatchesFamily(product: SellProductDetail, familySlug: str
 
   // Brand-agnostic model match — the sidebar links use short slugs like "iphone-8"
   // / "galaxy-note-20-ultra" (no brand prefix), which the family-href form doesn't.
+  // Compare with separators stripped too, since the reference slugs merge digits
+  // inconsistently ("pixel2" vs "pixel-2", "pixel-3xl" vs "pixel-3-xl").
+  const compact = (s: string) => s.replace(/[^a-z0-9]/gi, "").toLowerCase();
   const modelSlug = productModelSlug(product.name);
-  if (modelSlug && (modelSlug === target || modelSlug === target.replace(BRAND_PREFIX, ""))) return true;
+  const targetNoBrand = target.replace(BRAND_PREFIX, "");
+  if (modelSlug) {
+    if (modelSlug === target || modelSlug === targetNoBrand) return true;
+    if (compact(modelSlug) === compact(target) || compact(modelSlug) === compact(targetNoBrand)) return true;
+  }
 
   const handle = product.href.replace("/sell-my/", "").replace(/\.html$/, "");
   const handleBase = handle.replace(/-\d+(\.\d+)?(gb|tb)$/i, "");
