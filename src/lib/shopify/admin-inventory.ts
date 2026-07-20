@@ -351,6 +351,42 @@ export async function markRefurbUnitsSold(sold: { productId: string; qty: number
 }
 
 /**
+ * Put devices BACK into stock — the reverse of markRefurbUnitsSold. Used when a
+ * payment is refunded/reversed or an unpaid order is cancelled, so the device
+ * doesn't stay sold. Re-activates an archived unit and restores its quantity.
+ * Best-effort — never throws.
+ */
+export async function restoreRefurbStock(sold: { productId: string; qty: number }[]): Promise<void> {
+  if (!sold.length || !isShopifyAdminConfigured()) return;
+  await Promise.all(
+    sold.map(async ({ productId, qty }) => {
+      if (!productId) return;
+      try {
+        const data = await adminRequest<{ node: { status: string; qty: { value: string } | null } | null }>(
+          `query($id: ID!){ node(id: $id){ ... on Product { status qty: metafield(namespace: "inventory", key: "quantity") { value } } } }`,
+          { id: productId },
+          { noStore: true },
+        );
+        const archived = data.node?.status === "ARCHIVED";
+        // An archived unit sold out at 0; restoring puts the bought count back.
+        const current = archived ? 0 : Math.max(0, Math.floor(Number(data.node?.qty?.value ?? 0)) || 0);
+        const next = current + Math.max(1, Math.floor(qty) || 1);
+        await adminRequest(
+          SET_QTY_MUTATION,
+          { m: [{ ownerId: productId, namespace: "inventory", key: "quantity", type: "number_integer", value: String(next) }] },
+          { noStore: true },
+        );
+        if (archived) {
+          await adminRequest(STATUS_MUTATION, { input: { id: productId, status: "ACTIVE" } }, { noStore: true });
+        }
+      } catch (err) {
+        console.error(`[inventory] restoreRefurbStock failed for ${productId}:`, err);
+      }
+    }),
+  );
+}
+
+/**
  * Count ACTIVE refurb units grouped by their (cleaned) model name — the buy
  * storefront and admin both think in models-with-a-quantity, not per device.
  */

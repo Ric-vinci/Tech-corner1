@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendTradeInPaidEmail } from "@/lib/email/trade-in";
 import { statusFromWebhookEvent, verifyWebhookSignature } from "@/lib/payout";
+import { handleBuyOrderEvent, isBuyOrderEvent } from "@/lib/buy-payment/webhook-events";
 import type { TradeInSubmission } from "@/lib/trade-in/types";
 
 /**
@@ -30,6 +31,19 @@ export async function POST(request: Request) {
   }
 
   const event = JSON.parse(rawBody);
+
+  // BUY orders (money in): capture/refund events. Handled here so there's a single
+  // verified webhook URL for both directions of money.
+  if (isBuyOrderEvent(event.event_type)) {
+    try {
+      return NextResponse.json(await handleBuyOrderEvent(event));
+    } catch (err) {
+      console.error("[paypal-webhook] buy order handling failed:", err);
+      return NextResponse.json({ error: "Buy order handling failed" }, { status: 500 }); // let PayPal retry
+    }
+  }
+
+  // PAYOUTS (money out) below.
   const status = statusFromWebhookEvent(event.event_type);
   if (!status) {
     // Not a payout event we care about. Acknowledge so PayPal stops retrying.

@@ -10,22 +10,36 @@ import type { BuyCartItem } from "@/lib/cart/buy-cart";
 
 type Method = "bank" | "paypal" | "gift_card";
 
+type VariantInfo = { price: number; productId: string | null; available: boolean; title: string };
+
 /**
- * Re-derive each line price from Shopify (the basket is client-side / tamperable)
- * and capture the owning product id so the unit can be marked sold on purchase.
+ * Re-derive each line from Shopify (the basket is client-side / tamperable): the
+ * authoritative price, the owning product id (so the unit can be marked sold), and
+ * whether it's still ACTIVE — a device someone else already bought is ARCHIVED and
+ * must not be sellable again from a stale basket.
  */
-async function serverPrices(variantIds: string[]): Promise<Map<string, { price: number; productId: string | null }>> {
-  const map = new Map<string, { price: number; productId: string | null }>();
+async function serverPrices(variantIds: string[]): Promise<Map<string, VariantInfo>> {
+  const map = new Map<string, VariantInfo>();
   if (!variantIds.length || !isShopifyAdminConfigured()) return map;
   try {
-    const data = await adminRequest<{ nodes: ({ id: string; price: string; product: { id: string } | null } | null)[] }>(
-      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id price product { id } } } }`,
+    const data = await adminRequest<{
+      nodes: ({ id: string; price: string; product: { id: string; status: string; title: string } | null } | null)[];
+    }>(
+      `query($ids: [ID!]!) { nodes(ids: $ids) { ... on ProductVariant { id price product { id status title } } } }`,
       { ids: variantIds },
       { noStore: true },
     );
-    for (const n of data.nodes) if (n?.id) map.set(n.id, { price: parseFloat(n.price), productId: n.product?.id ?? null });
+    for (const n of data.nodes) {
+      if (!n?.id) continue;
+      map.set(n.id, {
+        price: parseFloat(n.price),
+        productId: n.product?.id ?? null,
+        available: n.product?.status === "ACTIVE",
+        title: n.product?.title ?? "",
+      });
+    }
   } catch {
-    /* fall back to client price */
+    /* Shopify unreachable — fall back to the client price (see soldOut check below) */
   }
   return map;
 }
@@ -55,6 +69,25 @@ export async function POST(request: Request) {
 
   // Authoritative prices from Shopify; never trust the client total.
   const prices = await serverPrices(items.map((i) => i.variantId).filter(Boolean) as string[]);
+
+  // Stock check BEFORE any money moves: the basket lives in localStorage, so a
+  // device may have sold since it was added (its product is then ARCHIVED). Selling
+  // it again would take payment for a phone we no longer have.
+  const soldOut = items.filter((i) => {
+    const info = i.variantId ? prices.get(i.variantId) : undefined;
+    return info ? !info.available : false; // unknown (Shopify unreachable) → don't block
+  });
+  if (soldOut.length) {
+    const names = soldOut.map((i) => i.productName).join(", ");
+    return NextResponse.json(
+      {
+        error: `Sorry — ${names} just sold out. Please remove ${soldOut.length === 1 ? "it" : "them"} from your basket.`,
+        soldOut: soldOut.map((i) => i.id),
+      },
+      { status: 409 },
+    );
+  }
+
   const lines = items.map((i) => {
     const derived = i.variantId ? prices.get(i.variantId) : undefined;
     const unit = derived?.price ?? i.price;
@@ -78,23 +111,46 @@ export async function POST(request: Request) {
     payment_method: method,
   };
 
-  // ---- Store credit: two secure paths, both debit real Shopify gift cards
-  // before the order is created. A typed one-time CODE is matched against the
-  // HMAC registry; otherwise the customer's OWN issued cards (by customer id).
+  // ---- Store credit: two secure paths, both debit real Shopify gift cards.
+  // A typed one-time CODE is matched against the HMAC registry; otherwise the
+  // customer's OWN issued cards (by customer id).
+  //
+  // Order of operations matters: the order row is written FIRST (pending), then
+  // the card is debited. Debiting first meant a failed insert took the customer's
+  // money with no order to show for it. Now money never moves without a record.
   if (method === "gift_card") {
     if (!isShopifyAdminConfigured()) return NextResponse.json({ error: "Store credit is unavailable." }, { status: 400 });
-    const code = body.giftCardCode?.trim();
-    const result = code ? await redeemByCode(code, total) : await redeemStoreCredit(session.customerId, total);
-    if (!result.ok) return NextResponse.json({ error: result.error ?? "Store credit could not be redeemed." }, { status: 400 });
 
     const { data, error } = await insertOrder(supabase, {
       ...baseRow,
-      status: "paid",
-      payment_status: "paid",
-      payment_reference: result.references.join(","),
-      paid_at: new Date().toISOString(),
+      status: "pending_payment",
+      payment_status: "pending",
     });
     if (error || !data) return schemaError(error);
+
+    const code = body.giftCardCode?.trim();
+    const result = code ? await redeemByCode(code, total) : await redeemStoreCredit(session.customerId, total);
+    if (!result.ok) {
+      // No money moved — void the order so it can't be mistaken for a real sale.
+      await supabase
+        .from("buy_orders")
+        .update({ status: "cancelled", payment_status: "failed", updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+      return NextResponse.json({ error: result.error ?? "Store credit could not be redeemed." }, { status: 400 });
+    }
+
+    // Debited successfully — record the reference so the payment is never orphaned.
+    await supabase
+      .from("buy_orders")
+      .update({
+        status: "paid",
+        payment_status: "paid",
+        payment_reference: result.references.join(","),
+        paid_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+
     await markRefurbUnitsSold(soldProductIds); // paid in full — remove from stock
     return NextResponse.json({ orderId: data.id, method, paid: true });
   }
