@@ -408,6 +408,24 @@
       "count": 1
     },
     {
+      "slug": "huawei-p9-eva-l09",
+      "label": "Trade In Your Huawei P9 - EVA-L09",
+      "href": "/sell-my/mobile/huawei/huawei-p9-eva-l09",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p9-lite-vns-l31",
+      "label": "Trade In Your Huawei P9 Lite - VNS-L31",
+      "href": "/sell-my/mobile/huawei/huawei-p9-lite-vns-l31",
+      "count": 1
+    },
+    {
+      "slug": "huawei-p9-plus",
+      "label": "Trade In Your Huawei P9 Plus",
+      "href": "/sell-my/mobile/huawei/huawei-p9-plus",
+      "count": 1
+    },
+    {
       "slug": "huawei-mate-30-pro",
       "label": "Trade In Your Huawei Mate 30 Pro",
       "href": "/sell-my/mobile/huawei/huawei-mate-30-pro",
@@ -427,5 +445,5 @@
     }
   ],
   "source": "wapple_html/sell/mobile/huawei/500",
-  "importedAt": "2026-07-19"
+  "importedAt": "2026-07-20"
 }

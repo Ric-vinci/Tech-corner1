@@ -425,8 +425,10 @@ export function getSellBrandFamilyPage(
     productMatchesFamilyLink(product as SellProductDetail, family),
   );
 
-  if (!products.length) return null;
-
+  // No products is not a 404: the reference sidebar advertises families it no
+  // longer stocks (Samsung S3/S4, Note Edge, Huawei P9). The link is real, so
+  // render the page and let the catalog show "We can't find products…".
+  // An unknown slug still returns null above, via findModelFamily.
   return {
     familyLabel: family.label,
     familyHref: family.href,
