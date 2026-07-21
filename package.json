@@ -12,7 +12,8 @@
     "publish:shopify": "node scripts/shopify/publish-collections.mjs && node scripts/shopify/publish-products.mjs",
     "assets:manifest": "node scripts/upload-assets-manifest.mjs",
     "supabase:migrate": "node scripts/apply-supabase-migration.mjs",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:shopify": "node scripts/check-shopify.mjs"
   },
   "dependencies": {
     "@shopify/storefront-api-client": "^1.0.10",
