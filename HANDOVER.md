@@ -57,6 +57,33 @@ them there, or stay on the static fallback (recommended for launch).
 
 ---
 
+### Shopify reference — where things live
+
+Written down because these IDs are hard to find again, and the Dev Dashboard is a
+different site from the store admin.
+
+| What | Value |
+|---|---|
+| Store (admin URL handle) | `tech-corner-9576` |
+| Store (canonical, API) | `8kttre-zn.myshopify.com` — both work |
+| Storefront | https://www.tech-corner.co.uk |
+| Organisation ID | `192371669` |
+| App name / ID | `TECH-Corner` / `400691855361` |
+| App Client ID | `cc2e77ed88ee38b4469a58f44318b807` (not secret) |
+
+| To do this | Go here |
+|---|---|
+| See the app, its activity, uninstall | `admin.shopify.com/store/tech-corner-9576/settings/apps` |
+| Change scopes (needs App developer role) | `dev.shopify.com/dashboard/192371669/apps/400691855361/versions` |
+| Client ID + Key | `dev.shopify.com/dashboard/192371669/apps/400691855361/settings` |
+| Check the connection works | `npm run check:shopify` |
+| Re-issue tokens from scratch | `node scripts/get-shopify-token.mjs` |
+
+The store admin and the Dev Dashboard are **separate sites**. The store admin needs
+only staff access; the Dev Dashboard needs the organisation-level "App developer"
+role, which is easy to lose if the client edits permissions. Losing it does **not**
+break the site — issued tokens are independent of any person's account.
+
 ## 2. Supabase — finish the transfer
 
 ✅ Project already moved to the client's organisation.
