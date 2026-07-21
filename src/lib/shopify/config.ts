@@ -47,10 +47,20 @@ export function normalizeImagePath(image: string): string {
   return image;
 }
 
+/**
+ * Whether the static JSON catalogue in src/data may be used.
+ *
+ * An explicit SHOPIFY_USE_STATIC_FALLBACK wins in both directions. The
+ * production heuristic below only applies when it is unset: it assumes Shopify
+ * holds the catalogue, which stopped being true once the sell catalogue moved
+ * into the repo and Shopify kept only the refurb units. Without the explicit
+ * check the storefront went blank in production while working in dev.
+ */
 export function allowStaticCatalogFallback(): boolean {
   if (process.env.SHOPIFY_USE_STATIC_FALLBACK === "false") return false;
+  if (process.env.SHOPIFY_USE_STATIC_FALLBACK === "true") return true;
   if (process.env.NODE_ENV === "production" && isShopifyConfigured()) return false;
-  return !isShopifyConfigured() || process.env.SHOPIFY_USE_STATIC_FALLBACK === "true";
+  return !isShopifyConfigured();
 }
 
 function resolveImageFallbackUrl(original: string, normalized: string): string {
