@@ -27,11 +27,19 @@ const PORT = 3000;
 const CALLBACK_PATH = "/shopify-callback";
 
 const SCOPES = [
+  // Admin API — refurb units, pricing metafields, publishing, payouts.
   "read_products", "write_products",
   "read_inventory", "write_inventory",
   "read_publications", "write_publications",
   "read_gift_cards", "write_gift_cards",
   "read_gift_card_transactions", "write_gift_card_transactions",
+  // Storefront API — public catalogue and menu reads. Without at least one
+  // unauthenticated_* scope, storefrontAccessTokenCreate is denied and public
+  // pages would have to read through the Admin token, which can also write.
+  "unauthenticated_read_product_listings",
+  "unauthenticated_read_product_inventory",
+  "unauthenticated_read_product_tags",
+  "unauthenticated_read_content",
 ].join(",");
 
 // The secret lives in .env.local (gitignored) so it never reaches the shell history.
@@ -96,21 +104,45 @@ const server = http.createServer(async (req, res) => {
       return server.close(() => process.exit(1));
     }
 
+    // Public pages should read through a Storefront token, not the Admin one —
+    // the Admin token can write. This needs an unauthenticated_* scope above.
+    let storefrontToken = null;
+    try {
+      const sfRes = await fetch(`https://${SHOP}/admin/api/2026-01/graphql.json`, {
+        method: "POST",
+        headers: { "X-Shopify-Access-Token": json.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `mutation { storefrontAccessTokenCreate(input: { title: "Tech Corner Website" }) {
+            storefrontAccessToken { accessToken }
+            userErrors { field message }
+          } }`,
+        }),
+      });
+      const sf = await sfRes.json();
+      storefrontToken = sf?.data?.storefrontAccessTokenCreate?.storefrontAccessToken?.accessToken ?? null;
+      if (!storefrontToken) {
+        const why = sf?.errors ? JSON.stringify(sf.errors) : JSON.stringify(sf?.data?.storefrontAccessTokenCreate?.userErrors ?? sf);
+        console.log(`\nNote: could not create a Storefront token — ${why.slice(0, 200)}`);
+      }
+    } catch (e) {
+      console.log(`\nNote: Storefront token request failed — ${e.message}`);
+    }
+
     console.log(`
 ============================================================
-SUCCESS — your permanent Admin API token:
-
-${json.access_token}
-
-Granted scopes:
-${json.scope}
+SUCCESS — permanent tokens for ${SHOP}
 
 Add to .env.local (and later to Vercel):
 
   SHOPIFY_STORE_DOMAIN=${SHOP}
-  SHOPIFY_ADMIN_ACCESS_TOKEN=${json.access_token}
+  SHOPIFY_ADMIN_ACCESS_TOKEN=${json.access_token}${
+    storefrontToken ? `\n  SHOPIFY_STOREFRONT_ACCESS_TOKEN=${storefrontToken}` : ""
+  }
 
-This token does not expire. You will not need this script again.
+Granted scopes:
+${json.scope}
+${storefrontToken ? "" : "\nNo Storefront token: add the unauthenticated_* scopes to the app\nin the Dev Dashboard, publish a new version, then run this again.\n"}
+Neither token expires. You will not need this script again.
 ============================================================
 `);
     reply(res, 200, "<h2>Done</h2><p>Your token is in the terminal. You can close this tab.</p>");
